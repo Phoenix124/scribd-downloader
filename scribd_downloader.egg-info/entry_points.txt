@@ -1,0 +1,3 @@
+[console_scripts]
+scribdl = scribdl.command_line:_command_line
+
