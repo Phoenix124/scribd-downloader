@@ -49,6 +49,7 @@ Then run these commands:
 brew install cairo
 brew install pango
 brew install libmagic
+brew install gtk+
 ```
 
 :: make sure you python Pillow is up to date > 6
