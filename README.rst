@@ -44,27 +44,24 @@ Installation
 Make sure you're using Python 3 (Python 2 is not supported by a few dependencies).
 Then run these commands:
 
-**macOS prerequisits for md2pdf / cairo
-```shell
-brew install cairo
-brew install pango
-brew install libmagic
-brew install gtk+
-```
+macOS prerequisits
+:: 
+   $ brew install cairo
+   $ brew install pango
+   $ brew install libmagic
+   $ brew install gtk+
 
-:: make sure you python Pillow is up to date > 6
-```shell
-python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade Pillow
-pip install scribd-downloader
-```
+make sure you python Pillow is up to date > 6
+:: 
+   $ python3 -m pip install --upgrade pip
+   $ python3 -m pip install --upgrade Pillow
+   $ pip install scribd-downloader
+
 or install the development version with:
 
 ::
-```shell
-python setup.py install
-```
-
+   $ python setup.py install
+   
 -----
 Usage
 -----
