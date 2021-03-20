@@ -182,5 +182,5 @@ class ScribdBook(ScribdBase):
         """
         Appends text to the passed file.
         """
-        with open(filename, "a") as f:
+        with open(filename, "a", encoding="utf-8") as f:
             f.write(string_text)
