@@ -1,4 +1,9 @@
-Scribd-Downloader
+Scribd-Downloader 
+
+**Repository is unsupported**
+
+**You could make changes via PR**
+
 =================
 
 |PyPi Version| |Build Status| |Coverage Status|
