@@ -4,6 +4,12 @@ Scribd-Downloader
 
 **You could make changes via PR**
 
+♥ Please Donate for code♥:
+
+* btc: ``1LbvwDevv53uj1isVDficH6c1qhxBwH6DQ``
+* eth: ``0xE1489B14D96A0b1fb24D0Ce37Af7F599B345e46E``
+* USDT-TRX: ``TUgNK9D8Y9rUyPgCL56vQ7YUVB3ei8qBzK``
+
 =================
 
 |PyPi Version| |Build Status| |Coverage Status|
