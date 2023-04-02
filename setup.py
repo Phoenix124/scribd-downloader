@@ -7,16 +7,13 @@ import os
 with open(os.path.join("scribdl", "version.py")) as version_file:
     exec(version_file.read())
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert_file('README.md', 'rst')
-except(IOError, ImportError):
-    long_description = open('README.md').read()
+with open("README.rst", "r") as f:
+    long_description = f.read()
 
 setup(name='scribd-downloader',
       version=__version__,
       description='Download documents, books and audiobooks off Scribd',
-      long_description=long_description,
+      long_description='Check description in https://github.com/Phoenix124/scribd-downloader/blob/master/README.rst',
       author='Ritiek Malhotra',
       author_email='ritiekmalhotra123@gmail.com',
       packages=find_packages(),
