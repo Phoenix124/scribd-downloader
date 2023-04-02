@@ -1,10 +1,10 @@
-name: Publish Scribdl 🐍 distributions 📦 to PyPI and TestPyPI
+name: Publish Scribdl 🐍 distributions 📦 to PyPI
 
 on: push
 
 jobs:
   build-n-publish:
-    name: Publish Scribdl 🐍 distributions 📦 to PyPI and TestPyPI
+    name: Publish Scribdl 🐍 distributions 📦 to PyPI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
