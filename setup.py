@@ -7,8 +7,11 @@ import os
 with open(os.path.join("scribdl", "version.py")) as version_file:
     exec(version_file.read())
 
-with open("README.rst", "r") as f:
-    long_description = f.read()
+try:
+    import pypandoc
+    long_description = pypandoc.convert_file('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
 
 setup(name='scribd-downloader',
       version=__version__,
