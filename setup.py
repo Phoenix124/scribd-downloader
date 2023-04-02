@@ -3,17 +3,17 @@
 from setuptools import setup, find_packages
 import os
 
+__version__ = '1.3.1'
+
 # __version__ comes into namespace from here
 with open(os.path.join("scribdl", "version.py")) as version_file:
     exec(version_file.read())
-
-with open("README.rst", "r") as f:
-    long_description = f.read()
 
 setup(name='scribd-downloader',
       version=__version__,
       description='Download documents, books and audiobooks off Scribd',
       long_description='Check description in https://github.com/Phoenix124/scribd-downloader/blob/master/README.rst',
+      long_description_content_type='text/x-rst',
       author='Ritiek Malhotra',
       author_email='ritiekmalhotra123@gmail.com',
       packages=find_packages(),
@@ -22,7 +22,7 @@ setup(name='scribd-downloader',
               'scribdl = scribdl.command_line:_command_line',
           ]
       },
-      url='https://www.github.com/ritiek/scribd-downloader',
+      url='https://github.com/Phoenix124/scribd-downloader',
       keywords=['scribd-downloader', 'documents', 'command-line', 'python'],
       license='MIT',
       download_url='https://github.com/ritiek/scribd-downloader/archive/v' + __version__ + '.tar.gz',
