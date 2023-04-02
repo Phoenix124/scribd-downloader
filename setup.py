@@ -13,8 +13,6 @@ with open("README.rst", "r") as f:
 setup(name='scribd-downloader',
       version=__version__,
       description='Download documents, books and audiobooks off Scribd',
-      long_description_content_type="text/markdown",
-      long_description='### Readme.md',
       author='Ritiek Malhotra',
       author_email='ritiekmalhotra123@gmail.com',
       packages=find_packages(),
