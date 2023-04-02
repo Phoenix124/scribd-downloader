@@ -166,6 +166,10 @@ browser and replace them with the ones in this file https://github.com/ritiek/sc
 You should then be able to automatically download full version of both textual books and audiobooks
 from Scribd using the tool by running the commands as usual.
 
+If you have troubles with croped images in pdf use command
+::
+	cd dir_with_all_image_files && img2pdf $(ls -tr *.jpg) -o path_to_pdf_output_file.pdf
+
 ----------
 Disclaimer
 ----------
