@@ -12,7 +12,7 @@ Scribd-Downloader
 |“Buy Me A Coffee”|
 
 .. |“Buy Me A Coffee”| image:: https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png
-   :target: https://www.buymeacoffee.com/gbraad
+   :target: https://www.buymeacoffee.com/liakhovetsh
 
 =================
 
