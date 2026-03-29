@@ -1,13 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
 from abc import ABCMeta, abstractmethod
-import six
 
 from .. import internals
 
 
-@six.add_metaclass(ABCMeta)
-class ScribdBase:
+class ScribdBase(metaclass=ABCMeta):
     """
     A base class for Scribd books, documents and audiobooks.
 

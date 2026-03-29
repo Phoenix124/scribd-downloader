@@ -7,7 +7,7 @@ import os
 with open(os.path.join("scribdl", "version.py")) as version_file:
     exec(version_file.read())
 
-with open("README.rst", "r") as f:
+with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(name='scribd-downloader',
@@ -26,11 +26,14 @@ setup(name='scribd-downloader',
       keywords=['scribd-downloader', 'documents', 'command-line', 'python'],
       license='MIT',
       download_url='https://github.com/ritiek/scribd-downloader/archive/v' + __version__ + '.tar.gz',
-      classifiers=[],
+      python_requires='>=3.6',
+      classifiers=[
+            'Programming Language :: Python :: 3',
+      ],
       install_requires=[
             'requests >= 2.19.1',
             'BeautifulSoup4 >= 4.6.3',
             'img2pdf >= 0.3.1',
-            'md2pdf >= 0.4'
+            'md2pdf >= 0.4',
       ]
      )

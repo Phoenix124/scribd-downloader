@@ -1,31 +1,3 @@
-Metadata-Version: 2.4
-Name: scribd-downloader
-Version: 1.3.2
-Summary: Download documents, books and audiobooks off Scribd
-Home-page: https://www.github.com/ritiek/scribd-downloader
-Download-URL: https://github.com/ritiek/scribd-downloader/archive/v1.3.2.tar.gz
-Author: Ritiek Malhotra
-Author-email: ritiekmalhotra123@gmail.com
-License: MIT
-Keywords: scribd-downloader,documents,command-line,python
-Classifier: Programming Language :: Python :: 3
-Requires-Python: >=3.6
-Requires-Dist: requests>=2.19.1
-Requires-Dist: BeautifulSoup4>=4.6.3
-Requires-Dist: img2pdf>=0.3.1
-Requires-Dist: md2pdf>=0.4
-Dynamic: author
-Dynamic: author-email
-Dynamic: classifier
-Dynamic: description
-Dynamic: download-url
-Dynamic: home-page
-Dynamic: keywords
-Dynamic: license
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
-
 # Scribd-Downloader
 
 **Repository is unsupported**
@@ -185,7 +157,8 @@ contents of a Scribd book by replacing the URL with the URL of your choice.
 
 If you're not willing to place your account credentials in a file, you could also copy the cookie values
 for `_scribd_session` and `_scribd_expire` when logged into your premium account on Scribd in the web
-browser and replace them with the ones in [scribdl/const.py](https://github.com/ritiek/scribd-downloader/blob/master/scribdl/const.py).
+browser and replace them with the ones
+in [scribdl/const.py](https://github.com/ritiek/scribd-downloader/blob/master/scribdl/const.py).
 
 You should then be able to automatically download full version of both textual books and audiobooks
 from Scribd using the tool by running the commands as usual.

@@ -30,12 +30,15 @@ class ScribdBook(ScribdBase):
         Extracts the book ID.
         """
         if not self._book_id:
+            book_id = None
             splits = self.url.split("/")
             for split in splits:
                 try:
                     book_id = int(split)
                 except ValueError:
                     continue
+            if book_id is None:
+                raise ValueError("Could not extract book ID from URL: {}".format(self.url))
             self._book_id = book_id
         return self._book_id
 

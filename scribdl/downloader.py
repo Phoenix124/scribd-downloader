@@ -94,8 +94,9 @@ class Downloader:
         """
         response = requests.get(self.url)
         soup = BeautifulSoup(response.text, "html.parser")
-        content_class = soup.find("body")["class"]
-        matches_with_book = content_class[0] == "autogen_class_views_layouts_book_web"
+        body = soup.find("body")
+        content_class = body.get("class", []) if body else []
+        matches_with_book = bool(content_class) and content_class[0] == "autogen_class_views_layouts_book_web"
         return matches_with_book
 
     def is_audiobook(self):

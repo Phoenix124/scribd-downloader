@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 
 import os
 
@@ -27,34 +28,34 @@ class ScribdDocument(ScribdBase):
     @property
     def jsonp_urls(self):
         """
-        Extracts all URLs ending with '.jsonp' by parsing the
-        HTML code.
+        Extracts all URLs ending with '.jsonp' by scanning script tags
+        and data attributes in the page HTML.
         """
         if not self._jsonp_urls:
-            js_text = self._soup.find_all("script", type="text/javascript")
+            found = []
+
+            # Search all script tag contents (any type)
+            for script in self._soup.find_all("script"):
+                text = script.string or ""
+                found.extend(re.findall(r'https?://[^\s"\'\\]+\.jsonp', text))
+
+            # Search data-* attributes on any element (Scribd embeds asset
+            # manifests in data-bookinfo, data-page, etc.)
+            for tag in self._soup.find_all(True):
+                for attr_val in tag.attrs.values():
+                    if isinstance(attr_val, str):
+                        found.extend(re.findall(r'https?://[^\s"\'\\]+\.jsonp', attr_val))
+
+            # Deduplicate while preserving order
+            seen = set()
             jsonp_urls = []
-            for opening in js_text:
-                for inner_opening in opening:
-                    jsonp = self._extract_jsonp_url(inner_opening)
-                    if jsonp:
-                        jsonp_urls.append(jsonp)
+            for url in found:
+                if url not in seen:
+                    seen.add(url)
+                    jsonp_urls.append(url)
+
             self._jsonp_urls = jsonp_urls
         return self._jsonp_urls
-
-    def _extract_jsonp_url(self, inner_opening):
-        """
-        Extracts URLs ending with '.jsonp'. These URLs contain the
-        raw document text.
-        """
-        portion1 = inner_opening.find("https://")
-
-        if portion1 == -1:
-            jsonp = None
-        else:
-            portion2 = inner_opening.find(".jsonp")
-            jsonp = inner_opening[portion1 : portion2 + 6]
-
-        return jsonp
 
     @abstractmethod
     def download(self):

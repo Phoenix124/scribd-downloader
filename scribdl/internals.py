@@ -1,5 +1,6 @@
-import requests
 import sys
+
+import requests
 import shutil
 
 GITHUB_URL_BASE = "https://github.com/ritiek/scribd-downloader"
@@ -22,7 +23,7 @@ def sanitize_title(title):
 
     Also change ' ' to '_' to preserve previous behavior.
     """
-    forbidden_chars = ' *"/\<>:|(),'
+    forbidden_chars = ' *"/\\<>:|(),'
     replace_char = "_"
 
     for ch in forbidden_chars:
