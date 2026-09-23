@@ -8,6 +8,9 @@ from abc import abstractmethod
 from .base import ScribdBase
 from .. import internals
 
+# Matches the 'window.page<N>_callback(["' wrapper, whatever the page number
+JSONP_CALLBACK_PREFIX = re.compile(r'^\s*window\.page\d+_callback\(\["')
+
 
 class ScribdDocument(ScribdBase):
     """
@@ -105,11 +108,9 @@ class ScribdTextualDocument(ScribdDocument):
         the text to the passed file.
         """
         response = requests.get(jsonp, timeout=internals.REQUEST_TIMEOUT).text
-        page_no = response[11:12]
 
         response_head = (
-            (response)
-            .replace("window.page" + page_no + '_callback(["', "")
+            JSONP_CALLBACK_PREFIX.sub("", response, count=1)
             .replace("\\n", "")
             .replace("\\", "")
             .replace('"]);', "")
