@@ -32,7 +32,7 @@ def check_page_response(response):
     if "everand.com" in response.url:
         raise exceptions.ScribdFetchError(
             "Scribd redirected to Everand, where books and audiobooks have moved. "
-            "Everand is not supported: {}".format(response.url)
+            "Download it from Everand instead: scribdl {}".format(response.url)
         )
     if response.status_code >= 400:
         raise exceptions.ScribdFetchError(

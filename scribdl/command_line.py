@@ -3,6 +3,7 @@ import os
 import sys
 
 from .downloader import Downloader
+from .content.everand import is_everand_url
 from . import authorize
 
 
@@ -12,10 +13,10 @@ def get_arguments():
     """
     parser = argparse.ArgumentParser(
         prog="scribdl",
-        description="Download documents and books from scribd.com"
+        description="Download documents from scribd.com and books and audiobooks from everand.com"
     )
 
-    parser.add_argument("url", metavar="URL", type=str, help="scribd url to download")
+    parser.add_argument("url", metavar="URL", type=str, help="scribd or everand url to download")
     parser.add_argument(
         "-i",
         "--images",
@@ -33,7 +34,8 @@ def get_arguments():
     parser.add_argument(
         "-c",
         "--credentials-file",
-        help="path to file containing your Scribd premium credentials",
+        help="path to file containing your Scribd premium credentials "
+             "(Everand credentials for Everand audiobooks)",
     )
     parser.add_argument(
         "--cookies",
@@ -70,13 +72,13 @@ def _command_line():
     if args.cookies:
         authorize.set_cookies(args.cookies)
 
-    if args.credentials_file:
-        credentials_file = args.credentials_file
-        authorize.set_credentials(credentials_file)
+    everand = is_everand_url(url)
+    if args.credentials_file and not everand:
+        authorize.set_credentials(args.credentials_file)
 
-    scribd_link = Downloader(url)
+    scribd_link = Downloader(url, credentials_file=args.credentials_file if everand else None)
     downloaded_content = scribd_link.download(is_image_document=images)
-    if pdf:
+    if pdf and downloaded_content is not None:
         print("\nConverting to {}..".format(downloaded_content.pdf_path))
         downloaded_content.to_pdf()
 
