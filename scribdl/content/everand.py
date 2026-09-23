@@ -152,6 +152,12 @@ class EverandBook(EverandContent):
                 raise exceptions.ScribdFetchError(
                     "Everand says \"Browser limit exceeded\": too many devices were used "
                     "recently, try again within 24 hours")
+            # Without access Everand sends the reader back to the book page
+            if "/read/" not in page.url:
+                raise exceptions.ScribdFetchError(
+                    "Everand didn't open the reader for this book. Check that your account "
+                    "has an active subscription and the book is available in your country: "
+                    "{}".format(page.url))
 
             # The cookie banner may cover the page buttons
             try:
