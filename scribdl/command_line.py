@@ -3,8 +3,6 @@ import os
 import sys
 
 from .downloader import Downloader
-from .content.everand import is_everand_url
-from . import authorize
 
 
 def get_arguments():
@@ -34,12 +32,20 @@ def get_arguments():
     parser.add_argument(
         "-c",
         "--credentials-file",
-        help="path to file containing your Scribd premium credentials "
-             "(Everand credentials for Everand audiobooks)",
+        help="path to file containing your Everand credentials, used for Everand audiobooks",
     )
     parser.add_argument(
-        "--cookies",
-        help="path to file with Scribd premium cookies, one name=value per line",
+        "--epub",
+        help="save Everand books as EPUB instead of PDF",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--max-pages",
+        help="download only the first N pages of an Everand book, e.g. for a quick test",
+        type=int,
+        default=0,
+        metavar="N",
     )
     parser.add_argument(
         "--proxy",
@@ -69,16 +75,11 @@ def _command_line():
         os.environ["HTTP_PROXY"] = args.proxy
         os.environ["HTTPS_PROXY"] = args.proxy
 
-    if args.cookies:
-        authorize.set_cookies(args.cookies)
-
-    everand = is_everand_url(url)
-    if args.credentials_file and not everand:
-        authorize.set_credentials(args.credentials_file)
-
-    scribd_link = Downloader(url, credentials_file=args.credentials_file if everand else None)
-    downloaded_content = scribd_link.download(is_image_document=images)
-    if pdf and downloaded_content is not None:
+    scribd_link = Downloader(url, credentials_file=args.credentials_file)
+    downloaded_content = scribd_link.download(
+        is_image_document=images, max_pages=args.max_pages, epub=args.epub)
+    # Everand books are already saved in their final format
+    if pdf and downloaded_content is not None and downloaded_content.input_content != downloaded_content.pdf_path:
         print("\nConverting to {}..".format(downloaded_content.pdf_path))
         downloaded_content.to_pdf()
 

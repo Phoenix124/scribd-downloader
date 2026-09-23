@@ -12,6 +12,11 @@ EVERAND_URL_PATTERN = re.compile(
     r"^https?://(?:www\.)?everand\.com/(?P<kind>[a-z]+)/(?P<id>\d+)(?:/(?P<slug>[^/?#]+))?"
 )
 
+# Scribd moved books and audiobooks to Everand, keeping their paths
+SCRIBD_MOVED_URL_PATTERN = re.compile(
+    r"^https?://(?:www\.)?scribd\.com/(?=(?:book|read|audiobook|listen)/\d+)"
+)
+
 BOOK_KINDS = ("book", "read")
 AUDIOBOOK_KINDS = ("audiobook", "listen")
 
@@ -33,6 +38,16 @@ def parse_everand_url(url):
 
 def is_everand_url(url):
     return parse_everand_url(url) is not None
+
+
+def to_everand_url(url):
+    """
+    Returns the Everand URL to download `url` from: Everand URLs as they
+    are, Scribd book and audiobook URLs moved to everand.com. Returns None
+    for anything else (e.g. Scribd documents).
+    """
+    url = SCRIBD_MOVED_URL_PATTERN.sub("https://www.everand.com/", url)
+    return url if is_everand_url(url) else None
 
 
 def _require_playwright():
@@ -81,7 +96,7 @@ class EverandContent:
 
 class EverandBook(EverandContent):
     """
-    A class for downloading Everand ebooks as PDF.
+    A class for downloading Everand ebooks as PDF or EPUB.
 
     Everand's reader is protected by Cloudflare, so this drives a visible
     Google Chrome window: log in once there and the session is kept in
@@ -96,18 +111,24 @@ class EverandBook(EverandContent):
         return self.sanitized_title + ".pdf"
 
     @property
+    def epub_filename(self):
+        return self.sanitized_title + ".epub"
+
+    @property
     def reader_url(self):
         return "https://www.everand.com/read/{}/{}".format(self.content_id, self._slug or "")
 
-    def download(self, filename=None, max_pages=0):
+    def download(self, filename=None, max_pages=0, epub=False):
         """
-        Downloads the book to a PDF and returns its path.
-        `max_pages` stops early after that many page columns (0 = all).
+        Downloads the book to a PDF (or a fixed-layout EPUB with `epub`)
+        and returns its path. `max_pages` stops early after that many page
+        columns (0 = all).
         """
         from ..everand import render
+        from ..everand import epub as epub_writer
 
         if not filename:
-            filename = self.filename
+            filename = self.epub_filename if epub else self.filename
         sync_playwright = _require_playwright()
 
         with sync_playwright() as playwright:
@@ -116,12 +137,16 @@ class EverandBook(EverandContent):
                 raise exceptions.ScribdFetchError(
                     "No pages captured, the Everand reader may have changed: {}".format(self.url))
 
-            print("Rendering {} pages to PDF..".format(len(columns)))
+            print("Rendering {} pages to {}..".format(len(columns), "EPUB" if epub else "PDF"))
             browser = playwright.chromium.launch(channel="chrome", headless=True)
             try:
-                with tempfile.TemporaryDirectory() as directory:
-                    paths = render.render_pages(browser, columns, fontfaces, directory)
-                    render.merge_pdfs(paths, filename)
+                if epub:
+                    pages = render.render_xhtml_pages(browser, columns, fontfaces)
+                    epub_writer.write_epub(pages, render.BASE_CSS + fontfaces, self.title, filename)
+                else:
+                    with tempfile.TemporaryDirectory() as directory:
+                        paths = render.render_pages(browser, columns, fontfaces, directory)
+                        render.merge_pdfs(paths, filename)
             finally:
                 browser.close()
 
