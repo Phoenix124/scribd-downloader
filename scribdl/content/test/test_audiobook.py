@@ -3,6 +3,8 @@ from ... import exceptions
 
 import pytest
 
+pytestmark = pytest.mark.skip(reason="Scribd moved audiobooks and books to Everand, which is not supported")
+
 
 @pytest.fixture(scope="module")
 def scribd_audiobook():

@@ -12,9 +12,6 @@
 
 ---
 
-[![PyPi Version](https://img.shields.io/pypi/v/scribd-downloader.svg)](https://pypi.org/project/scribd-downloader)
-[![Coverage Status](https://codecov.io/gh/ritiek/scribd-downloader/branch/master/graph/badge.svg)](https://codecov.io/gh/ritiek/scribd-downloader)
-
 (I also found an online service https://dlscrib.com/ created by [Erik Fong](mailto:dlscrib@gmail.com). It doesn't
 use this script as some people seem to think!).
 
@@ -123,6 +120,17 @@ scribdl -i https://scribd.com/doc/17142797/Case-in-Point
 
 (Images will be saved in the current working directory)
 
+## ⚠️ Scribd books and audiobooks (not working)
+
+Scribd has moved books and audiobooks to Everand: their Scribd URLs (`/book/`, `/read/`, `/audiobook/`)
+now redirect there and the endpoints this tool used are gone. Everand is not supported, so for these
+URLs the tool stops with `Scribd redirected to Everand`.
+
+The code and the premium options (`-c`, `--cookies`) are kept in case this changes. The old instructions:
+
+<details>
+<summary>Legacy usage for books and audiobooks</summary>
+
 ### Scribd Books
 
 The below command will generate a `.md` file of the book in the current working directory
@@ -137,8 +145,6 @@ Pass `--pdf` option to convert the generated output to a PDF.
 This will only download the book content available without owning a premium account on Scribd.
 See the below section for downloading full books if you own a premium Scribd account.
 
-## ⚠️Deprecated - auth is incompletable and audiobooks move to everand
-
 ### Scribd Audiobooks
 
 This will download `.mp3` of the audiobook:
@@ -150,7 +156,7 @@ scribdl https://www.scribd.com/audiobook/237606860/100-Ways-to-Motivate-Yourself
 This will only download the preview version of the audiobook. See the below section for
 downloading complete audiobooks if you own a premium Scribd account.
 
-## Downloading complete textual books and audiobooks
+### Downloading complete textual books and audiobooks
 
 If you have a premium Scribd account, you can also download the full version of
 textual books and audiobooks.
@@ -190,12 +196,17 @@ scribdl --cookies scribd_cookies.txt https://www.scribd.com/read/189087235/Confe
 You should then be able to automatically download full version of both textual books and audiobooks
 from Scribd using the tool by running the commands as usual.
 
+</details>
+
 ### Troubleshooting
 
 - if problem with weasyprint
   ```
   export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_FALLBACK_LIBRARY_PATH
   ```
+- If the text of a document comes out as gibberish (e.g. ``Xrmhfkmrc Diaf`sf`` instead of `Trademark License`),
+  Scribd has scrambled the characters of that document's font on purpose. Download the page images
+  with `-i` instead: they show the text correctly.
 - If you have troubles with cropped images in pdf use command:
 
   ```

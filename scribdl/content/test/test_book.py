@@ -2,6 +2,8 @@ from .. import book
 
 import pytest
 
+pytestmark = pytest.mark.skip(reason="Scribd moved audiobooks and books to Everand, which is not supported")
+
 
 @pytest.fixture(scope="module")
 def scribd_book():

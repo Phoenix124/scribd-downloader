@@ -17,10 +17,10 @@ class TestScribdBase:
     @pytest.fixture(scope="class")
     def scribd_base(self):
         return ScribdBaseTop(
-            "https://www.scribd.com/audiobook/367877343/Intelligence-in-Nature-An-Inquiry-into-Knowledge")
+            "https://www.scribd.com/document/55949937/33-Strategies-of-War")
 
     def test_title(self, scribd_base):
-        assert scribd_base.title == "Intelligence in Nature: An Inquiry into Knowledge"
+        assert scribd_base.title == "33 Strategies of War Overview"
 
     def test_sanitized_title(self, scribd_base):
-        assert scribd_base.sanitized_title == "Intelligence_in_Nature__An_Inquiry_into_Knowledge"
+        assert scribd_base.sanitized_title == "33_Strategies_of_War_Overview"
