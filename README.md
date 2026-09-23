@@ -4,6 +4,10 @@
 
 **You could make changes via PR**
 
+> ⚠️ **Status (September 2026):** downloading Scribd **documents** (text and image) works.
+> **Books and audiobooks** have moved from Scribd to Everand: their Scribd URLs now redirect there,
+> and Everand is not supported, so the tool stops with `Scribd redirected to Everand`.
+
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/liakhovetsh)
 
 ---

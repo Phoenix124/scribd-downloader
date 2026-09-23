@@ -1,10 +1,43 @@
 import requests
 import shutil
 
+from . import exceptions
+
 GITHUB_URL_BASE = "https://github.com/ritiek/scribd-downloader"
 
 # Seconds to wait for Scribd before giving up on a request
 REQUEST_TIMEOUT = 30
+
+
+def check_bot_challenge(response):
+    """
+    Raises a clear error when Scribd answers with its JavaScript
+    "Client Challenge" page instead of the requested content.
+    """
+    if "<title>Client Challenge</title>" in response.text:
+        raise exceptions.ScribdFetchError(
+            "Scribd blocked the automated request with a browser check "
+            "(\"Client Challenge\" page). Downloading does not currently work "
+            "with Scribd: {}".format(response.url)
+        )
+
+
+def check_page_response(response):
+    """
+    Raises a clear error when a Scribd page can't be used: a browser
+    check, a redirect to Everand (where Scribd moved books and
+    audiobooks) or an HTTP error.
+    """
+    check_bot_challenge(response)
+    if "everand.com" in response.url:
+        raise exceptions.ScribdFetchError(
+            "Scribd redirected to Everand, where books and audiobooks have moved. "
+            "Everand is not supported: {}".format(response.url)
+        )
+    if response.status_code >= 400:
+        raise exceptions.ScribdFetchError(
+            "Scribd returned HTTP {} for {}".format(response.status_code, response.url)
+        )
 
 
 def sanitize_title(title):

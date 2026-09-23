@@ -115,6 +115,7 @@ class ScribdBook(ScribdBase):
     def fetch_response(self, chapter, token):
         url = self._format_content_url(chapter, token)
         response = requests.get(url, timeout=internals.REQUEST_TIMEOUT)
+        internals.check_bot_challenge(response)
         return response
 
     def _extract_text_blocks(self, response_dict, chapter, token, filename):
@@ -181,6 +182,7 @@ class ScribdBook(ScribdBase):
                               cookies=const.premium_cookies,
                               data=data,
                               timeout=internals.REQUEST_TIMEOUT)
+        internals.check_page_response(token)
         return json.loads(token.text)["response"]
 
     def save_text(self, string_text, filename):

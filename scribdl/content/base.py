@@ -63,5 +63,6 @@ class ScribdBase(metaclass=ABCMeta):
         """
         if not self._hidden_soup:
             response = requests.get(self.url, timeout=internals.REQUEST_TIMEOUT)
+            internals.check_page_response(response)
             self._hidden_soup = BeautifulSoup(response.text, "html.parser")
         return self._hidden_soup

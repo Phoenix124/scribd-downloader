@@ -240,6 +240,7 @@ class ScribdAudioBook(ScribdBase):
         Scrapes the provided audiobook URL for information scraps.
         """
         response = requests.get(self.audiobook_url, cookies=self.cookies, timeout=internals.REQUEST_TIMEOUT)
+        internals.check_page_response(response)
         soup = BeautifulSoup(response.text, "html.parser")
 
         div_tag = soup.find("div", {"data-track_category": "book_preview"})

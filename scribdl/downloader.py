@@ -7,7 +7,7 @@ from .content.book import ScribdBook
 from .content.audiobook import ScribdAudioBook
 
 from .pdf_converter import ConvertToPDF
-from .internals import REQUEST_TIMEOUT
+from .internals import REQUEST_TIMEOUT, check_page_response
 
 
 class Downloader:
@@ -98,6 +98,7 @@ class Downloader:
             return True
         if self._soup is None:
             response = requests.get(self.url, timeout=REQUEST_TIMEOUT)
+            check_page_response(response)
             # Reused by the content classes to avoid fetching the page twice
             self._soup = BeautifulSoup(response.text, "html.parser")
         body = self._soup.find("body")
