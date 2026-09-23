@@ -12,7 +12,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(name='scribd-downloader',
       version=__version__,
-      description='Download documents, books and audiobooks off Scribd',
+      description='Download documents off Scribd, books and audiobooks off Everand',
       long_description=long_description,
       long_description_content_type='text/markdown',
       author='Ritiek Malhotra',
@@ -36,5 +36,11 @@ setup(name='scribd-downloader',
             'BeautifulSoup4 >= 4.6.3',
             'img2pdf >= 0.3.1',
             'md2pdf >= 0.4',
-      ]
+      ],
+      extras_require={
+            'everand': [
+                  'playwright >= 1.40',
+                  'pypdf >= 3.0',
+            ],
+      },
      )
