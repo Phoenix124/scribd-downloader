@@ -24,6 +24,9 @@ class ConvertToPDF:
         Converts to PDF depending upon the type of content,
         i.e. images or markdown.
         """
+        if self.input_content == self.pdf_path:
+            # Already downloaded as PDF (Everand books)
+            return
         if isinstance(self.input_content, list):
             self._images_to_pdf()
         else:

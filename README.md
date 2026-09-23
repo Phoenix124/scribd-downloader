@@ -5,8 +5,9 @@
 **You could make changes via PR**
 
 > ⚠️ **Status (September 2026):** downloading Scribd **documents** (text and image) works.
-> **Books and audiobooks** have moved from Scribd to Everand: their Scribd URLs now redirect there,
-> and Everand is not supported, so the tool stops with `Scribd redirected to Everand`.
+> **Books and audiobooks** have moved from Scribd to Everand. Pass their **Everand** URL instead:
+> ebooks are downloaded as PDF through your Chrome browser, audiobooks through
+> [audiobook-dl](https://github.com/jo1gi/audiobook-dl). See [Everand books and audiobooks](#everand-books-and-audiobooks).
 
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/liakhovetsh)
 
@@ -20,8 +21,8 @@ Current features:
 | Type       | Downloadable without Scribd premium | Requires Scribd premium for full download |
 |------------|-------------------------------------|-------------------------------------------|
 | Documents  | Yes                                 | No                                        |
-| Books      | Yes                                 | Yes                                       |
-| Audiobooks | Yes                                 | Yes                                       |
+| Books      | No (Everand, needs an account)      | Yes                                       |
+| Audiobooks | No (Everand, needs an account)      | Yes                                       |
 
 **Some information about Scribd documents:**
 
@@ -68,6 +69,14 @@ The package is not published on PyPI, so `pip install scribd-downloader` won't f
 
 The system libraries above (cairo, pango) are only needed for the `--pdf` option.
 
+For Everand books install the optional dependencies and have Google Chrome installed:
+
+```
+pip install "scribd-downloader[everand] @ git+https://github.com/Phoenix124/scribd-downloader.git"
+```
+
+For Everand audiobooks install [audiobook-dl](https://github.com/jo1gi/audiobook-dl): `pip install audiobook-dl`.
+
 If the `scribdl` command is not found after installing (e.g. `'scribdl' is not recognized` on Windows),
 the Python `Scripts` directory is not on your `PATH`. You can run the tool as a module instead:
 
@@ -80,10 +89,10 @@ python -m scribdl https://www.scribd.com/document/55949937/33-Strategies-of-War
 ```
 usage: scribdl [-h] [-i] [-p] [-c CREDENTIALS_FILE] [--cookies COOKIES] [--proxy PROXY] URL
 
-Download documents and books from scribd.com
+Download documents from scribd.com and books and audiobooks from everand.com
 
 positional arguments:
-  URL           scribd url to download
+  URL           scribd or everand url to download
 
 optional arguments:
   -h, --help    show this help message and exit
@@ -91,7 +100,8 @@ optional arguments:
   -p, --pdf     convert to pdf (*Nix: imagemagick)
   -c CREDENTIALS_FILE, --credentials-file CREDENTIALS_FILE
                         path to file containing your Scribd premium
-                        credentials
+                        credentials (Everand credentials for Everand
+                        audiobooks)
   --cookies COOKIES     path to file with Scribd premium cookies, one
                         name=value per line
   --proxy PROXY         proxy URL to use for all requests, e.g.
@@ -120,16 +130,44 @@ scribdl -i https://scribd.com/doc/17142797/Case-in-Point
 
 (Images will be saved in the current working directory)
 
-## ⚠️ Scribd books and audiobooks (not working)
+## Everand books and audiobooks
 
 Scribd has moved books and audiobooks to Everand: their Scribd URLs (`/book/`, `/read/`, `/audiobook/`)
-now redirect there and the endpoints this tool used are gone. Everand is not supported, so for these
-URLs the tool stops with `Scribd redirected to Everand`.
+now redirect there and the endpoints this tool used are gone. For these URLs the tool stops with
+`Scribd redirected to Everand` and prints the Everand URL to use instead.
 
-The code and the premium options (`-c`, `--cookies`) are kept in case this changes. The old instructions:
+You need an Everand account with access to the title. Use it for personal, offline reading only and
+respect Everand's Terms of Service.
+
+### Everand ebooks
+
+```
+scribdl https://www.everand.com/read/813249861/Sleep-Change-the-way-you-sleep-with-this-90-minute-read
+```
+
+1. A Google Chrome window opens. On the first run log in to Everand there and pass any captcha;
+   the session is kept in `~/.scribdl/everand-chrome-profile`, so later runs don't ask again.
+   Delete that folder to switch accounts.
+2. The tool turns the reader's pages one by one (don't use the window meanwhile) and captures them.
+3. The pages are rendered into `<title>.pdf` in the current directory, with selectable text.
+
+Everand's reader is behind Cloudflare, so this drives your real browser instead of plain requests.
+If Everand changes its reader, the page selectors in `scribdl/everand/capture.py` may need updating.
+
+### Everand audiobooks
+
+```
+scribdl -c everand_credentials.txt https://www.everand.com/audiobook/237606860/100-Ways-to-Motivate-Yourself-Change-Your-Life-Forever
+```
+
+The download is handed over to [audiobook-dl](https://github.com/jo1gi/audiobook-dl). The optional
+credentials file holds your Everand email and password on two lines, like the Scribd one below.
+
+The old Scribd code and the premium options (`-c`, `--cookies`) are kept in case this changes.
+The old instructions:
 
 <details>
-<summary>Legacy usage for books and audiobooks</summary>
+<summary>Legacy usage for Scribd books and audiobooks</summary>
 
 ### Scribd Books
 

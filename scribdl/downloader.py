@@ -5,6 +5,7 @@ from .content.document import ScribdTextualDocument
 from .content.document import ScribdImageDocument
 from .content.book import ScribdBook
 from .content.audiobook import ScribdAudioBook
+from .content import everand
 
 from .pdf_converter import ConvertToPDF
 from .internals import REQUEST_TIMEOUT, check_page_response
@@ -17,12 +18,24 @@ class Downloader:
     Parameters
     ----------
     url : `str`
-        A string containing path to a Scribd URL
+        A string containing path to a Scribd or Everand URL
+    credentials_file : `str`
+        Optional path to a file with Everand credentials, used for
+        Everand audiobooks
     """
 
-    def __init__(self, url):
+    def __init__(self, url, credentials_file=None):
         self.url = url
+        self.credentials_file = credentials_file
         self._soup = None
+        self._everand_kind = None
+        parsed = everand.parse_everand_url(url)
+        if parsed is not None:
+            self._everand_kind = parsed[0]
+            self._is_audiobook = self._everand_kind in everand.AUDIOBOOK_KINDS
+            self._is_book = not self._is_audiobook
+            return
+
         is_audiobook = self.is_audiobook()
         if is_audiobook:
             is_book = False
@@ -37,6 +50,9 @@ class Downloader:
         Downloads books and documents from Scribd.
         Returns an object of `ConvertToPDF` class.
         """
+        if self._everand_kind is not None:
+            return self._download_everand()
+
         if self._is_audiobook:
             content = self._download_audiobook()
             return content
@@ -62,6 +78,17 @@ class Downloader:
         md_path = book.download()
         pdf_path = "{}.pdf".format(book.sanitized_title)
         return ConvertToPDF(md_path, pdf_path)
+
+    def _download_everand(self):
+        """
+        Downloads Everand books as PDF (returns an object of `ConvertToPDF`
+        class) and Everand audiobooks (returns None).
+        """
+        if self._is_audiobook:
+            everand.EverandAudioBook(self.url, self.credentials_file).download()
+            return None
+        pdf_path = everand.EverandBook(self.url).download()
+        return ConvertToPDF(pdf_path, pdf_path)
 
     def _download_document(self, image_document):
         """
