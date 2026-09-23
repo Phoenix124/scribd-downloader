@@ -23,10 +23,10 @@ setup(name='scribd-downloader',
                   'scribdl = scribdl.command_line:_command_line',
             ]
       },
-      url='https://www.github.com/ritiek/scribd-downloader',
+      url='https://github.com/Phoenix124/scribd-downloader',
       keywords=['scribd-downloader', 'documents', 'command-line', 'python'],
       license='MIT',
-      download_url='https://github.com/ritiek/scribd-downloader/archive/v' + __version__ + '.tar.gz',
+      download_url='https://github.com/Phoenix124/scribd-downloader/archive/refs/tags/v' + __version__ + '.tar.gz',
       python_requires='>=3.8',
       classifiers=[
             'Programming Language :: Python :: 3',

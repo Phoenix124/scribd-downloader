@@ -3,8 +3,6 @@ import shutil
 
 from . import exceptions
 
-GITHUB_URL_BASE = "https://github.com/ritiek/scribd-downloader"
-
 # Seconds to wait for Scribd before giving up on a request
 REQUEST_TIMEOUT = 30
 
