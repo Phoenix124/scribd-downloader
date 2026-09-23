@@ -153,7 +153,6 @@ scribdl https://www.everand.com/read/813249861/Sleep-Change-the-way-you-sleep-wi
 
 Everand's reader is behind Cloudflare, so this drives your real browser instead of plain requests.
 If Everand changes its reader, the page selectors in `scribdl/everand/capture.py` may need updating.
-The approach is based on [everand-downloader](https://github.com/CrazyCoder76/everand-downloader).
 
 ### Everand audiobooks
 
