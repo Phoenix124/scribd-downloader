@@ -1,4 +1,6 @@
 import argparse
+import os
+import sys
 
 from .downloader import Downloader
 from . import authorize
@@ -9,6 +11,7 @@ def get_arguments():
     Parses arguments off the command-line.
     """
     parser = argparse.ArgumentParser(
+        prog="scribdl",
         description="Download documents and books from scribd.com"
     )
 
@@ -32,6 +35,14 @@ def get_arguments():
         "--credentials-file",
         help="path to file containing your Scribd premium credentials",
     )
+    parser.add_argument(
+        "--cookies",
+        help="path to file with Scribd premium cookies, one name=value per line",
+    )
+    parser.add_argument(
+        "--proxy",
+        help="proxy URL to use for all requests, e.g. http://127.0.0.1:8080",
+    )
 
     return parser
 
@@ -40,11 +51,24 @@ def _command_line():
     """
     This function that gets executed when called via command-line.
     """
+    # Windows consoles can't encode every character found in Scribd texts
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
+
     parser = get_arguments()
     args = parser.parse_args()
     url = args.url
     pdf = args.pdf
     images = args.images
+
+    if args.proxy:
+        # requests picks proxies up from the environment
+        os.environ["HTTP_PROXY"] = args.proxy
+        os.environ["HTTPS_PROXY"] = args.proxy
+
+    if args.cookies:
+        authorize.set_cookies(args.cookies)
 
     if args.credentials_file:
         credentials_file = args.credentials_file

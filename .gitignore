@@ -8,3 +8,5 @@ __pycache__/
 venv/
 *.egg-info/
 /PKG-INFO
+scribd_credentials.txt
+scribd_cookies.txt

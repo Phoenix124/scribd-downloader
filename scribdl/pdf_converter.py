@@ -1,5 +1,3 @@
-from md2pdf.core import md2pdf
-import img2pdf
 import os
 from pathlib import Path
 
@@ -35,6 +33,10 @@ class ConvertToPDF:
         """
         Converts markdown to PDF.
         """
+        # Imported lazily: md2pdf pulls in WeasyPrint, which needs system
+        # libraries (cairo, pango) that are only required for --pdf
+        from md2pdf.core import md2pdf
+
         md2pdf(self.pdf_path,
                md=Path(self.input_content),
                base_url=os.getcwd())
@@ -43,6 +45,8 @@ class ConvertToPDF:
         """
         Converts images to PDF.
         """
+        import img2pdf
+
         open_images = []
         try:
             open_images = [open(img, "rb") for img in self.input_content]

@@ -94,6 +94,8 @@ class Downloader:
         Checks whether the passed URL points to a Scribd book
         or a Scribd document.
         """
+        if "/book/" in self.url or "/read/" in self.url:
+            return True
         if self._soup is None:
             response = requests.get(self.url, timeout=REQUEST_TIMEOUT)
             # Reused by the content classes to avoid fetching the page twice

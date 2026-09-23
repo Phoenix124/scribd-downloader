@@ -16,6 +16,26 @@ SCRIBD_LOGIN_DATA = {
 }
 
 
+def set_cookies(filepath):
+    """
+    Reads Scribd premium cookies from the file passed, one
+    `name=value` pair per line (e.g. `_scribd_session=...`), as
+    copied from a web-browser logged into a premium account.
+    """
+    with open(filepath, "r") as in_file:
+        for line in in_file:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            name, sep, value = line.partition("=")
+            if not sep:
+                raise exceptions.ScribdFetchError("Invalid cookie line, expected name=value: " + line)
+            const.premium_cookies[name.strip()] = value.strip()
+
+    if "_scribd_session" not in const.premium_cookies:
+        raise exceptions.ScribdFetchError("Cookie file must contain _scribd_session")
+
+
 def set_credentials(filepath):
     """
     Reads username and password for Scribd premium account

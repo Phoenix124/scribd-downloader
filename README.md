@@ -60,19 +60,24 @@ Make sure your Python Pillow is up to date > 6
 ```
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade Pillow
-pip install scribd-downloader
+pip install git+https://github.com/Phoenix124/scribd-downloader.git
 ```
 
-Or install the development version with:
+The package is not published on PyPI, so `pip install scribd-downloader` won't find it.
+
+The system libraries above (cairo, pango) are only needed for the `--pdf` option.
+
+If the `scribdl` command is not found after installing (e.g. `'scribdl' is not recognized` on Windows),
+the Python `Scripts` directory is not on your `PATH`. You can run the tool as a module instead:
 
 ```
-python setup.py install
+python -m scribdl https://www.scribd.com/document/55949937/33-Strategies-of-War
 ```
 
 ## Usage
 
 ```
-usage: scribdl [-h] [-i] [-p] URL
+usage: scribdl [-h] [-i] [-p] [-c CREDENTIALS_FILE] [--cookies COOKIES] [--proxy PROXY] URL
 
 Download documents and books from scribd.com
 
@@ -86,7 +91,13 @@ optional arguments:
   -c CREDENTIALS_FILE, --credentials-file CREDENTIALS_FILE
                         path to file containing your Scribd premium
                         credentials
+  --cookies COOKIES     path to file with Scribd premium cookies, one
+                        name=value per line
+  --proxy PROXY         proxy URL to use for all requests, e.g.
+                        http://127.0.0.1:8080
 ```
+
+Instead of `--proxy` you can also set the standard `HTTPS_PROXY` / `HTTP_PROXY` environment variables.
 
 ## Examples
 
@@ -110,7 +121,8 @@ scribdl -i https://scribd.com/doc/17142797/Case-in-Point
 
 ### Scribd Books
 
-The below command will generate a `.md` file of the book in the current working directory:
+The below command will generate a `.md` file of the book in the current working directory
+(both `/read/<id>/...` and `/book/<id>/...` URLs work):
 
 ```
 scribdl https://www.scribd.com/read/189087235/Confessions-of-a-Casting-Director-Help-Actors-Land-Any-Role-with-Secrets-from-Inside-the-Audition-Room
@@ -155,10 +167,21 @@ scribdl -c scribd_credentials.txt https://www.scribd.com/audiobook/359295794/Pri
 It should then download all the audiobook chapters as mp3. Similarly, you could also download complete
 contents of a Scribd book by replacing the URL with the URL of your choice.
 
-If you're not willing to place your account credentials in a file, you could also copy the cookie values
-for `_scribd_session` and `_scribd_expire` when logged into your premium account on Scribd in the web
-browser and replace them with the ones
-in [scribdl/const.py](https://github.com/ritiek/scribd-downloader/blob/master/scribdl/const.py).
+If logging in with credentials fails (e.g. `Login error: An error occurred please try again`),
+or you're not willing to place your account credentials in a file, copy the cookie values
+for `_scribd_session` and `_scribd_expire` from your web-browser while logged into your premium
+Scribd account and put them in a file:
+
+```
+_scribd_session=<value>
+_scribd_expire=<value>
+```
+
+Then pass it with `--cookies`:
+
+```
+scribdl --cookies scribd_cookies.txt https://www.scribd.com/read/189087235/Confessions-of-a-Casting-Director-Help-Actors-Land-Any-Role-with-Secrets-from-Inside-the-Audition-Room
+```
 
 You should then be able to automatically download full version of both textual books and audiobooks
 from Scribd using the tool by running the commands as usual.
