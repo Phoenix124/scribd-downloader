@@ -25,13 +25,16 @@ class Downloader:
         self.credentials_file = credentials_file
         self.everand_url = everand.to_everand_url(url)
 
-    def download(self, is_image_document=None):
+    def download(self, is_image_document=None, max_pages=0, epub=False):
         """
         Downloads documents from Scribd and books and audiobooks from Everand.
         Returns an object of `ConvertToPDF` class (None for audiobooks).
+
+        `max_pages` and `epub` apply to Everand books: stop after that many
+        pages (0 = all) and save as EPUB instead of PDF.
         """
         if self.everand_url is not None:
-            return self._download_everand()
+            return self._download_everand(max_pages, epub)
 
         if is_image_document is None:
             raise TypeError(
@@ -41,17 +44,17 @@ class Downloader:
             )
         return self._download_document(is_image_document)
 
-    def _download_everand(self):
+    def _download_everand(self, max_pages, epub):
         """
-        Downloads Everand books as PDF (returns an object of `ConvertToPDF`
-        class) and Everand audiobooks (returns None).
+        Downloads Everand books as PDF or EPUB (returns an object of
+        `ConvertToPDF` class) and Everand audiobooks (returns None).
         """
         kind, _, _ = everand.parse_everand_url(self.everand_url)
         if kind in everand.AUDIOBOOK_KINDS:
             everand.EverandAudioBook(self.everand_url, self.credentials_file).download()
             return None
-        pdf_path = everand.EverandBook(self.everand_url).download()
-        return ConvertToPDF(pdf_path, pdf_path)
+        path = everand.EverandBook(self.everand_url).download(max_pages=max_pages, epub=epub)
+        return ConvertToPDF(path, path)
 
     def _download_document(self, image_document):
         """

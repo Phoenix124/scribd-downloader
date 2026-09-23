@@ -35,6 +35,19 @@ def get_arguments():
         help="path to file containing your Everand credentials, used for Everand audiobooks",
     )
     parser.add_argument(
+        "--epub",
+        help="save Everand books as EPUB instead of PDF",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--max-pages",
+        help="download only the first N pages of an Everand book, e.g. for a quick test",
+        type=int,
+        default=0,
+        metavar="N",
+    )
+    parser.add_argument(
         "--proxy",
         help="proxy URL to use for all requests, e.g. http://127.0.0.1:8080",
     )
@@ -63,8 +76,10 @@ def _command_line():
         os.environ["HTTPS_PROXY"] = args.proxy
 
     scribd_link = Downloader(url, credentials_file=args.credentials_file)
-    downloaded_content = scribd_link.download(is_image_document=images)
-    if pdf and downloaded_content is not None:
+    downloaded_content = scribd_link.download(
+        is_image_document=images, max_pages=args.max_pages, epub=args.epub)
+    # Everand books are already saved in their final format
+    if pdf and downloaded_content is not None and downloaded_content.input_content != downloaded_content.pdf_path:
         print("\nConverting to {}..".format(downloaded_content.pdf_path))
         downloaded_content.to_pdf()
 

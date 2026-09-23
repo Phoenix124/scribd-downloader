@@ -48,6 +48,10 @@ class TestEverandBook:
     def test_title_without_slug(self):
         assert everand.EverandBook("https://www.everand.com/book/813249861").title == "813249861"
 
+    def test_epub_filename(self):
+        book = everand.EverandBook(BOOK_URL)
+        assert book.epub_filename == "Sleep_Change_the_way_you_sleep_with_this_90_minute_read.epub"
+
     def test_reader_url(self):
         book = everand.EverandBook("https://www.everand.com/book/813249861/Sleep")
         assert book.reader_url == "https://www.everand.com/read/813249861/Sleep"
@@ -78,7 +82,7 @@ class TestEverandAudioBook:
 
 class TestDownloaderRouting:
     def test_book(self, monkeypatch):
-        monkeypatch.setattr(everand.EverandBook, "download", lambda self: "Sleep.pdf")
+        monkeypatch.setattr(everand.EverandBook, "download", lambda self, **kwargs: "Sleep.pdf")
         content = Downloader(BOOK_URL).download()
         assert content.input_content == content.pdf_path == "Sleep.pdf"
         # Already a PDF, nothing to convert
@@ -86,9 +90,16 @@ class TestDownloaderRouting:
 
     def test_scribd_book(self, monkeypatch):
         urls = []
-        monkeypatch.setattr(everand.EverandBook, "download", lambda self: urls.append(self.url) or "Book.pdf")
+        monkeypatch.setattr(everand.EverandBook, "download", lambda self, **kwargs: urls.append(self.url) or "Book.pdf")
         Downloader("https://www.scribd.com/book/634833211/Biomechanical-Mapping").download()
         assert urls == ["https://www.everand.com/book/634833211/Biomechanical-Mapping"]
+
+    def test_book_options(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(everand.EverandBook, "download", lambda self, **kwargs: calls.append(kwargs) or "Sleep.epub")
+        content = Downloader(BOOK_URL).download(max_pages=4, epub=True)
+        assert calls == [{"max_pages": 4, "epub": True}]
+        assert content.input_content == "Sleep.epub"
 
     def test_audiobook(self, monkeypatch):
         calls = []

@@ -1,5 +1,6 @@
 """
-Renders captured Everand page columns into a single PDF with selectable text.
+Renders captured Everand page columns into a single PDF with selectable text
+(or into pages for an EPUB).
 
 Rendering happens in headless Chromium because Playwright can only print
 PDFs there. Captured columns carry the reader's uneven on-screen margins,
@@ -14,7 +15,7 @@ import os
 # Blank space in px around the content of every page
 MARGIN = 48
 
-_BASE_CSS = ("@page{margin:0}*{box-sizing:border-box}"
+BASE_CSS = ("@page{margin:0}*{box-sizing:border-box}"
              "html,body{margin:0;padding:0;background:#fff}"
              "[data-content-column]{transform:none !important}")
 
@@ -74,7 +75,7 @@ async () => {
 def _load(page, column, fontfaces):
     html = (column["html"] or "").replace('src="/', 'src="https://www.everand.com/')
     document = ("<!doctype html><html><head><meta charset='utf-8'>"
-                "<style>{}{}</style></head><body>{}</body></html>").format(_BASE_CSS, fontfaces, html)
+                "<style>{}{}</style></head><body>{}</body></html>").format(BASE_CSS, fontfaces, html)
     try:
         page.set_content(document, wait_until="networkidle", timeout=20000)
     except Exception:
@@ -90,13 +91,11 @@ def _box_size(box):
             math.ceil(box["y1"] - box["y0"] + 2 * MARGIN))
 
 
-def render_pages(browser, columns, fontfaces, directory):
+def _placed_pages(page, columns, fontfaces):
     """
-    Renders every column to its own PDF inside `directory`.
-    Returns the list of written paths in reading order.
+    Loads every column into `page` cropped to its final page size and
+    yields (number, width, height) while it is displayed.
     """
-    page = browser.new_page()
-
     # First pass measures every page to find the shared text page size
     boxes = []
     for column in columns:
@@ -105,7 +104,6 @@ def render_pages(browser, columns, fontfaces, directory):
     text_sizes = [_box_size(box) for box in boxes if box and box["hasText"]]
     text_size = (max(w for w, _ in text_sizes), max(h for _, h in text_sizes)) if text_sizes else None
 
-    paths = []
     for number, (column, box) in enumerate(zip(columns, boxes), 1):
         _load(page, column, fontfaces)
         if box and box["hasText"]:
@@ -116,14 +114,37 @@ def render_pages(browser, columns, fontfaces, directory):
             page.evaluate(_JS_PLACE, dict(box, W=width, H=height, M=MARGIN, center=False))
         else:
             width, height = column["w"] or 1015, column["h"] or 1544
+        yield number, width, height
+        print("Rendered page {} of {}".format(number, len(columns)))
 
+
+def render_pages(browser, columns, fontfaces, directory):
+    """
+    Renders every column to its own PDF inside `directory`.
+    Returns the list of written paths in reading order.
+    """
+    page = browser.new_page()
+    paths = []
+    for number, width, height in _placed_pages(page, columns, fontfaces):
         path = os.path.join(directory, "{:05d}.pdf".format(number))
         page.pdf(path=path, width="{}px".format(width), height="{}px".format(height), print_background=True)
         paths.append(path)
-        print("Rendered page {} of {}".format(number, len(columns)))
-
     page.close()
     return paths
+
+
+def render_xhtml_pages(browser, columns, fontfaces):
+    """
+    Crops every column like `render_pages` and returns them as
+    (xhtml body, width, height) tuples for a fixed-layout EPUB.
+    """
+    page = browser.new_page()
+    pages = []
+    for _, width, height in _placed_pages(page, columns, fontfaces):
+        body = page.evaluate("() => new XMLSerializer().serializeToString(document.body)")
+        pages.append((body, width, height))
+    page.close()
+    return pages
 
 
 def merge_pdfs(paths, output_path):

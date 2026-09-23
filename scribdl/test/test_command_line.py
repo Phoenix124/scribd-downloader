@@ -49,3 +49,14 @@ class TestCommandLine:
         parser = command_line.get_arguments()
         parsed_args = parser.parse_args(args)
         assert parsed_args.images and parsed_args.pdf
+
+    def test_everand_options(self):
+        args = ["--epub", "--max-pages", "5", "https://www.everand.com/book/1/Book"]
+        parser = command_line.get_arguments()
+        parsed_args = parser.parse_args(args)
+        assert parsed_args.epub and parsed_args.max_pages == 5
+
+    def test_everand_defaults(self):
+        parser = command_line.get_arguments()
+        parsed_args = parser.parse_args(["https://www.everand.com/book/1/Book"])
+        assert not parsed_args.epub and parsed_args.max_pages == 0

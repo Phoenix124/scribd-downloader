@@ -87,7 +87,7 @@ python -m scribdl https://www.scribd.com/document/55949937/33-Strategies-of-War
 ## Usage
 
 ```
-usage: scribdl [-h] [-i] [-p] [-c CREDENTIALS_FILE] [--proxy PROXY] URL
+usage: scribdl [-h] [-i] [-p] [-c CREDENTIALS_FILE] [--epub] [--max-pages N] [--proxy PROXY] URL
 
 Download documents from scribd.com and books and audiobooks from everand.com
 
@@ -101,6 +101,9 @@ optional arguments:
   -c CREDENTIALS_FILE, --credentials-file CREDENTIALS_FILE
                         path to file containing your Everand
                         credentials, used for Everand audiobooks
+  --epub        save Everand books as EPUB instead of PDF
+  --max-pages N download only the first N pages of an Everand book,
+                        e.g. for a quick test
   --proxy PROXY         proxy URL to use for all requests, e.g.
                         http://127.0.0.1:8080
 ```
@@ -146,6 +149,16 @@ scribdl https://www.everand.com/read/813249861/Sleep-Change-the-way-you-sleep-wi
    Delete that folder to switch accounts.
 2. The tool turns the reader's pages one by one (don't use the window meanwhile) and captures them.
 3. The pages are rendered into `<title>.pdf` in the current directory, with selectable text.
+
+Options:
+
+- `--epub` saves a fixed-layout EPUB (`<title>.epub`) instead of the PDF. Its pages look exactly like
+  the PDF ones; the text can't be reflowed, because Everand's reader positions every line itself.
+- `--max-pages N` stops after the first N pages. Handy for a quick first try:
+
+  ```
+  scribdl --max-pages 5 https://www.everand.com/book/813249861/Sleep-Change-the-way-you-sleep-with-this-90-minute-read
+  ```
 
 Everand's reader is behind Cloudflare, so this drives your real browser instead of plain requests.
 If Everand changes its reader, the page selectors in `scribdl/everand/capture.py` may need updating.
