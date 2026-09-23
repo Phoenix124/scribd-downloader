@@ -12,6 +12,11 @@ EVERAND_URL_PATTERN = re.compile(
     r"^https?://(?:www\.)?everand\.com/(?P<kind>[a-z]+)/(?P<id>\d+)(?:/(?P<slug>[^/?#]+))?"
 )
 
+# Scribd moved books and audiobooks to Everand, keeping their paths
+SCRIBD_MOVED_URL_PATTERN = re.compile(
+    r"^https?://(?:www\.)?scribd\.com/(?=(?:book|read|audiobook|listen)/\d+)"
+)
+
 BOOK_KINDS = ("book", "read")
 AUDIOBOOK_KINDS = ("audiobook", "listen")
 
@@ -33,6 +38,16 @@ def parse_everand_url(url):
 
 def is_everand_url(url):
     return parse_everand_url(url) is not None
+
+
+def to_everand_url(url):
+    """
+    Returns the Everand URL to download `url` from: Everand URLs as they
+    are, Scribd book and audiobook URLs moved to everand.com. Returns None
+    for anything else (e.g. Scribd documents).
+    """
+    url = SCRIBD_MOVED_URL_PATTERN.sub("https://www.everand.com/", url)
+    return url if is_everand_url(url) else None
 
 
 def _require_playwright():

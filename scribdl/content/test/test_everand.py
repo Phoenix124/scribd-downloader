@@ -10,6 +10,19 @@ BOOK_URL = "https://www.everand.com/read/813249861/Sleep-Change-the-way-you-slee
 AUDIOBOOK_URL = "https://www.everand.com/audiobook/237606860/100-Ways-to-Motivate-Yourself-Change-Your-Life-Forever"
 
 
+class TestToEverandUrl:
+    def test_everand(self):
+        assert everand.to_everand_url(BOOK_URL) == BOOK_URL
+
+    @pytest.mark.parametrize("kind", ["book", "read", "audiobook", "listen"])
+    def test_scribd_moved(self, kind):
+        url = "https://www.scribd.com/{}/634833211/Biomechanical-Mapping".format(kind)
+        assert everand.to_everand_url(url) == "https://www.everand.com/{}/634833211/Biomechanical-Mapping".format(kind)
+
+    def test_scribd_document(self):
+        assert everand.to_everand_url("https://www.scribd.com/document/96882378/Trademark-License-Agreement") is None
+
+
 class TestParseEverandUrl:
     def test_read(self):
         assert everand.parse_everand_url(BOOK_URL) == (
@@ -70,6 +83,12 @@ class TestDownloaderRouting:
         assert content.input_content == content.pdf_path == "Sleep.pdf"
         # Already a PDF, nothing to convert
         content.to_pdf()
+
+    def test_scribd_book(self, monkeypatch):
+        urls = []
+        monkeypatch.setattr(everand.EverandBook, "download", lambda self: urls.append(self.url) or "Book.pdf")
+        Downloader("https://www.scribd.com/book/634833211/Biomechanical-Mapping").download()
+        assert urls == ["https://www.everand.com/book/634833211/Biomechanical-Mapping"]
 
     def test_audiobook(self, monkeypatch):
         calls = []

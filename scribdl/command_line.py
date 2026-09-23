@@ -3,8 +3,6 @@ import os
 import sys
 
 from .downloader import Downloader
-from .content.everand import is_everand_url
-from . import authorize
 
 
 def get_arguments():
@@ -34,12 +32,7 @@ def get_arguments():
     parser.add_argument(
         "-c",
         "--credentials-file",
-        help="path to file containing your Scribd premium credentials "
-             "(Everand credentials for Everand audiobooks)",
-    )
-    parser.add_argument(
-        "--cookies",
-        help="path to file with Scribd premium cookies, one name=value per line",
+        help="path to file containing your Everand credentials, used for Everand audiobooks",
     )
     parser.add_argument(
         "--proxy",
@@ -69,14 +62,7 @@ def _command_line():
         os.environ["HTTP_PROXY"] = args.proxy
         os.environ["HTTPS_PROXY"] = args.proxy
 
-    if args.cookies:
-        authorize.set_cookies(args.cookies)
-
-    everand = is_everand_url(url)
-    if args.credentials_file and not everand:
-        authorize.set_credentials(args.credentials_file)
-
-    scribd_link = Downloader(url, credentials_file=args.credentials_file if everand else None)
+    scribd_link = Downloader(url, credentials_file=args.credentials_file)
     downloaded_content = scribd_link.download(is_image_document=images)
     if pdf and downloaded_content is not None:
         print("\nConverting to {}..".format(downloaded_content.pdf_path))

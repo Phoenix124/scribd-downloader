@@ -5,8 +5,8 @@
 **You could make changes via PR**
 
 > ⚠️ **Status (September 2026):** downloading Scribd **documents** (text and image) works.
-> **Books and audiobooks** have moved from Scribd to Everand. Pass their **Everand** URL instead:
-> ebooks are downloaded as PDF through your Chrome browser, audiobooks through
+> **Books and audiobooks** have moved from Scribd to Everand and are downloaded from there (Scribd or
+> Everand URLs both work): ebooks as PDF through your Chrome browser, audiobooks through
 > [audiobook-dl](https://github.com/jo1gi/audiobook-dl). See [Everand books and audiobooks](#everand-books-and-audiobooks).
 
 [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/liakhovetsh)
@@ -18,11 +18,11 @@ use this script as some people seem to think!).
 
 Current features:
 
-| Type       | Downloadable without Scribd premium | Requires Scribd premium for full download |
-|------------|-------------------------------------|-------------------------------------------|
-| Documents  | Yes                                 | No                                        |
-| Books      | No (Everand, needs an account)      | Yes                                       |
-| Audiobooks | No (Everand, needs an account)      | Yes                                       |
+| Type       | Downloaded from | Needs an account                                  |
+|------------|-----------------|---------------------------------------------------|
+| Documents  | Scribd          | No                                                |
+| Books      | Everand         | Yes, with a subscription and access to the book   |
+| Audiobooks | Everand         | Yes, with a subscription and access to the book   |
 
 **Some information about Scribd documents:**
 
@@ -87,7 +87,7 @@ python -m scribdl https://www.scribd.com/document/55949937/33-Strategies-of-War
 ## Usage
 
 ```
-usage: scribdl [-h] [-i] [-p] [-c CREDENTIALS_FILE] [--cookies COOKIES] [--proxy PROXY] URL
+usage: scribdl [-h] [-i] [-p] [-c CREDENTIALS_FILE] [--proxy PROXY] URL
 
 Download documents from scribd.com and books and audiobooks from everand.com
 
@@ -99,11 +99,8 @@ optional arguments:
   -i, --images  download url made up of images
   -p, --pdf     convert to pdf (*Nix: imagemagick)
   -c CREDENTIALS_FILE, --credentials-file CREDENTIALS_FILE
-                        path to file containing your Scribd premium
-                        credentials (Everand credentials for Everand
-                        audiobooks)
-  --cookies COOKIES     path to file with Scribd premium cookies, one
-                        name=value per line
+                        path to file containing your Everand
+                        credentials, used for Everand audiobooks
   --proxy PROXY         proxy URL to use for all requests, e.g.
                         http://127.0.0.1:8080
 ```
@@ -132,9 +129,8 @@ scribdl -i https://scribd.com/doc/17142797/Case-in-Point
 
 ## Everand books and audiobooks
 
-Scribd has moved books and audiobooks to Everand: their Scribd URLs (`/book/`, `/read/`, `/audiobook/`)
-now redirect there and the endpoints this tool used are gone. For these URLs the tool stops with
-`Scribd redirected to Everand` and prints the Everand URL to use instead.
+Scribd has moved books and audiobooks to Everand. Their Scribd URLs (`/book/`, `/read/`, `/audiobook/`,
+`/listen/`) are downloaded from Everand automatically, so both kinds of URLs work.
 
 You need an Everand account with access to the title. Use it for personal, offline reading only and
 respect Everand's Terms of Service.
@@ -161,80 +157,12 @@ scribdl -c everand_credentials.txt https://www.everand.com/audiobook/237606860/1
 ```
 
 The download is handed over to [audiobook-dl](https://github.com/jo1gi/audiobook-dl). The optional
-credentials file holds your Everand email and password on two lines, like the Scribd one below.
-
-The old Scribd code and the premium options (`-c`, `--cookies`) are kept in case this changes.
-The old instructions:
-
-<details>
-<summary>Legacy usage for Scribd books and audiobooks</summary>
-
-### Scribd Books
-
-The below command will generate a `.md` file of the book in the current working directory
-(both `/read/<id>/...` and `/book/<id>/...` URLs work):
-
-```
-scribdl https://www.scribd.com/read/189087235/Confessions-of-a-Casting-Director-Help-Actors-Land-Any-Role-with-Secrets-from-Inside-the-Audition-Room
-```
-
-Pass `--pdf` option to convert the generated output to a PDF.
-
-This will only download the book content available without owning a premium account on Scribd.
-See the below section for downloading full books if you own a premium Scribd account.
-
-### Scribd Audiobooks
-
-This will download `.mp3` of the audiobook:
-
-```
-scribdl https://www.scribd.com/audiobook/237606860/100-Ways-to-Motivate-Yourself-Change-Your-Life-Forever
-```
-
-This will only download the preview version of the audiobook. See the below section for
-downloading complete audiobooks if you own a premium Scribd account.
-
-### Downloading complete textual books and audiobooks
-
-If you have a premium Scribd account, you can also download the full version of
-textual books and audiobooks.
-
-Create a text file containing your Scribd credentials, such that the contents of the file look like below:
+credentials file holds your Everand email and password on two lines:
 
 ```
 user@mail.com
 password
 ```
-
-Now pass the file path to the `-c` option, for example:
-
-```
-scribdl -c scribd_credentials.txt https://www.scribd.com/audiobook/359295794/Principles-Life-and-Work
-```
-
-It should then download all the audiobook chapters as mp3. Similarly, you could also download complete
-contents of a Scribd book by replacing the URL with the URL of your choice.
-
-If logging in with credentials fails (e.g. `Login error: An error occurred please try again`),
-or you're not willing to place your account credentials in a file, copy the cookie values
-for `_scribd_session` and `_scribd_expire` from your web-browser while logged into your premium
-Scribd account and put them in a file:
-
-```
-_scribd_session=<value>
-_scribd_expire=<value>
-```
-
-Then pass it with `--cookies`:
-
-```
-scribdl --cookies scribd_cookies.txt https://www.scribd.com/read/189087235/Confessions-of-a-Casting-Director-Help-Actors-Land-Any-Role-with-Secrets-from-Inside-the-Audition-Room
-```
-
-You should then be able to automatically download full version of both textual books and audiobooks
-from Scribd using the tool by running the commands as usual.
-
-</details>
 
 ### Troubleshooting
 

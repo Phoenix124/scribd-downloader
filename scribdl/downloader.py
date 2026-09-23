@@ -1,24 +1,20 @@
-from bs4 import BeautifulSoup
-import requests
-
 from .content.document import ScribdTextualDocument
 from .content.document import ScribdImageDocument
-from .content.book import ScribdBook
-from .content.audiobook import ScribdAudioBook
 from .content import everand
 
 from .pdf_converter import ConvertToPDF
-from .internals import REQUEST_TIMEOUT, check_page_response
 
 
 class Downloader:
     """
-    A helper class for downloading books and documents off Scribd.
+    A helper class for downloading Scribd documents and Everand
+    books and audiobooks.
 
     Parameters
     ----------
     url : `str`
-        A string containing path to a Scribd or Everand URL
+        A string containing a Scribd or Everand URL. Scribd book and
+        audiobook URLs are downloaded from Everand, where they have moved.
     credentials_file : `str`
         Optional path to a file with Everand credentials, used for
         Everand audiobooks
@@ -27,67 +23,34 @@ class Downloader:
     def __init__(self, url, credentials_file=None):
         self.url = url
         self.credentials_file = credentials_file
-        self._soup = None
-        self._everand_kind = None
-        parsed = everand.parse_everand_url(url)
-        if parsed is not None:
-            self._everand_kind = parsed[0]
-            self._is_audiobook = self._everand_kind in everand.AUDIOBOOK_KINDS
-            self._is_book = not self._is_audiobook
-            return
-
-        is_audiobook = self.is_audiobook()
-        if is_audiobook:
-            is_book = False
-        else:
-            is_book = self.is_book()
-
-        self._is_audiobook = is_audiobook
-        self._is_book = is_book
+        self.everand_url = everand.to_everand_url(url)
 
     def download(self, is_image_document=None):
         """
-        Downloads books and documents from Scribd.
-        Returns an object of `ConvertToPDF` class.
+        Downloads documents from Scribd and books and audiobooks from Everand.
+        Returns an object of `ConvertToPDF` class (None for audiobooks).
         """
-        if self._everand_kind is not None:
+        if self.everand_url is not None:
             return self._download_everand()
 
-        if self._is_audiobook:
-            content = self._download_audiobook()
-            return content
-
-        if self._is_book:
-            content = self._download_book()
-        else:
-            if is_image_document is None:
-                raise TypeError(
-                    "The input URL points to a document. You must specify "
-                    "whether it is an image document or a textual document "
-                    "in the `image_document` parameter."
-                )
-            content = self._download_document(is_image_document)
-        return content
-
-    def _download_book(self):
-        """
-        Downloads books off Scribd.
-        Returns an object of `ConvertToPDF` class.
-        """
-        book = ScribdBook(self.url, self._soup)
-        md_path = book.download()
-        pdf_path = "{}.pdf".format(book.sanitized_title)
-        return ConvertToPDF(md_path, pdf_path)
+        if is_image_document is None:
+            raise TypeError(
+                "The input URL points to a document. You must specify "
+                "whether it is an image document or a textual document "
+                "in the `image_document` parameter."
+            )
+        return self._download_document(is_image_document)
 
     def _download_everand(self):
         """
         Downloads Everand books as PDF (returns an object of `ConvertToPDF`
         class) and Everand audiobooks (returns None).
         """
-        if self._is_audiobook:
-            everand.EverandAudioBook(self.url, self.credentials_file).download()
+        kind, _, _ = everand.parse_everand_url(self.everand_url)
+        if kind in everand.AUDIOBOOK_KINDS:
+            everand.EverandAudioBook(self.everand_url, self.credentials_file).download()
             return None
-        pdf_path = everand.EverandBook(self.url).download()
+        pdf_path = everand.EverandBook(self.everand_url).download()
         return ConvertToPDF(pdf_path, pdf_path)
 
     def _download_document(self, image_document):
@@ -96,45 +59,10 @@ class Downloader:
         Returns an object of `ConvertToPDF` class.
         """
         if image_document:
-            document = ScribdImageDocument(self.url, self._soup)
+            document = ScribdImageDocument(self.url)
         else:
-            document = ScribdTextualDocument(self.url, self._soup)
+            document = ScribdTextualDocument(self.url)
 
         content_path = document.download()
         pdf_path = "{}.pdf".format(document.sanitized_title)
         return ConvertToPDF(content_path, pdf_path)
-
-    def _download_audiobook(self):
-        """
-        Downloads audiobooks off Scribd.
-        Returns a list containing local audio filepaths.
-        """
-        audiobook = ScribdAudioBook(self.url)
-        playlist = audiobook.playlist
-        if not audiobook.premium_cookies:
-            print("Premium cookies not detected. Only the preview version of audiobook will be downloaded.")
-        playlist.download()
-        return playlist.download_paths
-
-    def is_book(self):
-        """
-        Checks whether the passed URL points to a Scribd book
-        or a Scribd document.
-        """
-        if "/book/" in self.url or "/read/" in self.url:
-            return True
-        if self._soup is None:
-            response = requests.get(self.url, timeout=REQUEST_TIMEOUT)
-            check_page_response(response)
-            # Reused by the content classes to avoid fetching the page twice
-            self._soup = BeautifulSoup(response.text, "html.parser")
-        body = self._soup.find("body")
-        content_class = body.get("class", []) if body else []
-        matches_with_book = bool(content_class) and content_class[0] == "autogen_class_views_layouts_book_web"
-        return matches_with_book
-
-    def is_audiobook(self):
-        """
-        Checks whether the passed URL points to a Scribd audiobook.
-        """
-        return "/audiobook/" in self.url
