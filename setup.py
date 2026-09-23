@@ -17,7 +17,7 @@ setup(name='scribd-downloader',
       long_description_content_type='text/markdown',
       author='Ritiek Malhotra',
       author_email='ritiekmalhotra123@gmail.com',
-      packages = find_packages(),
+      packages = find_packages(exclude=["*.test", "*.test.*"]),
       entry_points={
             'console_scripts': [
                   'scribdl = scribdl.command_line:_command_line',
