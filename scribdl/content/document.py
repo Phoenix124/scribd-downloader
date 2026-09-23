@@ -1,11 +1,18 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 
 import os
 
 from abc import abstractmethod
 from .base import ScribdBase
 from .. import internals
+
+# Matches the 'window.page<N>_callback(["' wrapper, whatever the page number
+JSONP_CALLBACK_PREFIX = re.compile(r'^\s*window\.page\d+_callback\(\["')
+
+# Page image URL of an <img class="absimg" orig="..."> tag, escaped or not
+ORIG_IMAGE_URL = re.compile(r'orig=\\?"(https?://[^"\\]+)')
 
 
 class ScribdDocument(ScribdBase):
@@ -18,43 +25,41 @@ class ScribdDocument(ScribdBase):
         A string containing Scribd document URL.
     """
 
-    def __init__(self, document_url):
-        super().__init__(document_url)
-        self.url = document_url
+    def __init__(self, document_url, soup=None):
+        super().__init__(document_url, soup)
         self._jsonp_urls = None
-        self._hidden_soup = None
 
     @property
     def jsonp_urls(self):
         """
-        Extracts all URLs ending with '.jsonp' by parsing the
-        HTML code.
+        Extracts all URLs ending with '.jsonp' by scanning script tags
+        and data attributes in the page HTML.
         """
         if not self._jsonp_urls:
-            js_text = self._soup.find_all("script", type="text/javascript")
+            found = []
+
+            # Search all script tag contents (any type)
+            for script in self._soup.find_all("script"):
+                text = script.string or ""
+                found.extend(re.findall(r'https?://[^\s"\'\\]+\.jsonp', text))
+
+            # Search data-* attributes on any element (Scribd embeds asset
+            # manifests in data-bookinfo, data-page, etc.)
+            for tag in self._soup.find_all(True):
+                for attr_val in tag.attrs.values():
+                    if isinstance(attr_val, str):
+                        found.extend(re.findall(r'https?://[^\s"\'\\]+\.jsonp', attr_val))
+
+            # Deduplicate while preserving order
+            seen = set()
             jsonp_urls = []
-            for opening in js_text:
-                for inner_opening in opening:
-                    jsonp = self._extract_jsonp_url(inner_opening)
-                    if jsonp:
-                        jsonp_urls.append(jsonp)
+            for url in found:
+                if url not in seen:
+                    seen.add(url)
+                    jsonp_urls.append(url)
+
             self._jsonp_urls = jsonp_urls
         return self._jsonp_urls
-
-    def _extract_jsonp_url(self, inner_opening):
-        """
-        Extracts URLs ending with '.jsonp'. These URLs contain the
-        raw document text.
-        """
-        portion1 = inner_opening.find("https://")
-
-        if portion1 == -1:
-            jsonp = None
-        else:
-            portion2 = inner_opening.find(".jsonp")
-            jsonp = inner_opening[portion1 : portion2 + 6]
-
-        return jsonp
 
     @abstractmethod
     def download(self):
@@ -75,9 +80,9 @@ class ScribdTextualDocument(ScribdDocument):
         A string containing Scribd document URL.
     """
 
-    def __init__(self, document_url):
-        super().__init__(document_url)
-        self.filename = self.sanitized_title + ".md"
+    @property
+    def filename(self):
+        return self.sanitized_title + ".md"
 
     def download(self, filename=None):
         """
@@ -88,13 +93,18 @@ class ScribdTextualDocument(ScribdDocument):
             filename = self.filename
 
         print("Extracting text to", self.sanitized_title, "\n")
+        # Start from an empty file so re-runs don't duplicate content
+        open(filename, "w", encoding="utf-8").close()
         self._text_extractor(filename)
         return filename
 
     def _text_extractor(self, filename):
         """
-        Saves text from every '.jsonp' URL.
+        Saves text of the pages embedded in the HTML page (short
+        documents have all their pages there) and from every
+        '.jsonp' URL.
         """
+        self._write_spans(self._soup, filename)
         for jsonp_url in self.jsonp_urls:
             self._save_text(jsonp_url, filename)
 
@@ -103,24 +113,27 @@ class ScribdTextualDocument(ScribdDocument):
         Makes a GET request to the '.jsonp' URL and saves
         the text to the passed file.
         """
-        response = requests.get(jsonp).text
-        page_no = response[11:12]
+        response = requests.get(jsonp, timeout=internals.REQUEST_TIMEOUT).text
 
         response_head = (
-            (response)
-            .replace("window.page" + page_no + '_callback(["', "")
+            JSONP_CALLBACK_PREFIX.sub("", response, count=1)
             .replace("\\n", "")
             .replace("\\", "")
             .replace('"]);', "")
         )
         soup_content = BeautifulSoup(response_head, "html.parser")
+        self._write_spans(soup_content, filename)
 
-        for x in soup_content.find_all("span", {"class": "a"}):
-            xtext = internals.fix_encoding(x.get_text())
+    def _write_spans(self, soup, filename):
+        """
+        Appends the text of every page text span to the passed file.
+        """
+        for x in soup.find_all("span", {"class": "a"}):
+            xtext = x.get_text()
             print(xtext)
 
             extraction = xtext + "\n\n"
-            with open(filename, "a") as feed:
+            with open(filename, "a", encoding="utf-8") as feed:
                 feed.write(extraction)
 
 
@@ -134,63 +147,56 @@ class ScribdImageDocument(ScribdDocument):
         A string containing Scribd document URL.
     """
 
-    def __init__(self, document_url):
-        super().__init__(document_url)
-        self._image_download_counter = 1
-
     def download(self, initial_filename=None):
         """
-        Function for downloading images off '.jsonp' URLs to
-        filenames.
+        Function for downloading page images to filenames.
         """
         if not initial_filename:
             initial_filename = self.sanitized_title
 
-        downloaded_html_images = self._html_image_extractor(initial_filename)
-        downloaded_jsonp_images = self._jsonp_image_extractor(initial_filename)
-        return downloaded_html_images + downloaded_jsonp_images
-
-    def _jsonp_image_extractor(self, initial_filename):
-        """
-        Extract images from extracted .jsonp URLs.
-        """
-        downloaded_images = []
-        found = self._image_download_counter > 1
+        image_urls = self._html_image_urls()
         for jsonp_url in self.jsonp_urls:
-            filename = "{}_{}.jpg".format(initial_filename, self._image_download_counter)
-            img_url = self._convert_jsonp_url_to_image_url(jsonp_url, found=found)
-            self._save_image(img_url, filename)
-            downloaded_images.append(filename)
-            self._image_download_counter += 1
-        return downloaded_images
+            image_urls.extend(self._jsonp_image_urls(jsonp_url))
 
-    def _html_image_extractor(self, initial_filename):
-        """
-        Extracts images that are directly embedded in the original
-        HTML page.
-        """
         downloaded_images = []
-        absimg = self._soup.find_all("img", {"class": "absimg"}, src=True)
-        for img in absimg:
-            filename = "{}_{}.jpg".format(initial_filename, self._image_download_counter)
-            self._save_image(img["src"], filename)
+        seen = set()
+        for url in image_urls:
+            if url in seen:
+                continue
+            seen.add(url)
+            extension = os.path.splitext(url)[1] or ".jpg"
+            filename = "{}_{}{}".format(initial_filename, len(downloaded_images) + 1, extension)
+            self._save_image(url, filename)
             downloaded_images.append(filename)
-            self._image_download_counter += 1
         return downloaded_images
 
-    def _convert_jsonp_url_to_image_url(self, jsonp_url, found):
+    def _html_image_urls(self):
         """
-        Gets the image URL corresponding to the '.jsonp' URL.
+        Image URLs of the pages embedded in the HTML page.
         """
-        if jsonp_url.endswith(".jsonp"):
-            replacement = jsonp_url.replace("/pages/", "/images/")
-            if found:
-                replacement = replacement.replace(".jsonp", "/000.jpg")
-            else:
-                replacement = replacement.replace(".jsonp", ".jpg")
-        else:
-            replacement = jsonp_url
-        return replacement
+        urls = []
+        for img in self._soup.find_all("img", {"class": "absimg"}):
+            url = img.get("orig") or img.get("src")
+            if url:
+                urls.append(self._secure_url(url))
+        return urls
+
+    def _jsonp_image_urls(self, jsonp_url):
+        """
+        Image URLs referenced by the '.jsonp' page. Falls back to
+        guessing the URL from the '.jsonp' one.
+        """
+        response = requests.get(jsonp_url, timeout=internals.REQUEST_TIMEOUT).text
+        urls = [self._secure_url(url) for url in ORIG_IMAGE_URL.findall(response)]
+        if not urls:
+            urls = [jsonp_url.replace("/pages/", "/images/").replace(".jsonp", ".jpg")]
+        return urls
+
+    @staticmethod
+    def _secure_url(url):
+        if url.startswith("http://"):
+            url = "https://" + url[len("http://"):]
+        return url
 
     def _save_image(self, url, imagename):
         """

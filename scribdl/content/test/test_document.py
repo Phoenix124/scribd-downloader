@@ -17,10 +17,10 @@ def scribd_image_document():
 
 class TestScribdTextualDocument:
     def test_title(self, scribd_textual_document):
-        assert scribd_textual_document.title == "33 Strategies of War"
+        assert scribd_textual_document.title == "33 Strategies of War Overview"
 
     def test_sanitized_title(self, scribd_textual_document):
-        assert scribd_textual_document.sanitized_title == "33_Strategies_of_War"
+        assert scribd_textual_document.sanitized_title == "33_Strategies_of_War_Overview"
 
     def test_url(self, scribd_textual_document):
         assert scribd_textual_document.url == "https://www.scribd.com/document/55949937/33-Strategies-of-War"
@@ -40,4 +40,4 @@ class TestScribdImageDocument:
         assert scribd_image_document.url == "https://scribd.com/doc/17142797/Case-in-Point"
 
     def test_jsonp_urls(self, scribd_image_document):
-        assert len(scribd_image_document.jsonp_urls) == 182
+        assert len(scribd_image_document.jsonp_urls) == 185

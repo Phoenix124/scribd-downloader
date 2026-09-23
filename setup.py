@@ -7,16 +7,17 @@ import os
 with open(os.path.join("scribdl", "version.py")) as version_file:
     exec(version_file.read())
 
-with open("README.rst", "r") as f:
+with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(name='scribd-downloader',
       version=__version__,
       description='Download documents, books and audiobooks off Scribd',
       long_description=long_description,
+      long_description_content_type='text/markdown',
       author='Ritiek Malhotra',
       author_email='ritiekmalhotra123@gmail.com',
-      packages = find_packages(),
+      packages = find_packages(exclude=["*.test", "*.test.*"]),
       entry_points={
             'console_scripts': [
                   'scribdl = scribdl.command_line:_command_line',
@@ -26,11 +27,14 @@ setup(name='scribd-downloader',
       keywords=['scribd-downloader', 'documents', 'command-line', 'python'],
       license='MIT',
       download_url='https://github.com/ritiek/scribd-downloader/archive/v' + __version__ + '.tar.gz',
-      classifiers=[],
+      python_requires='>=3.8',
+      classifiers=[
+            'Programming Language :: Python :: 3',
+      ],
       install_requires=[
             'requests >= 2.19.1',
             'BeautifulSoup4 >= 4.6.3',
             'img2pdf >= 0.3.1',
-            'md2pdf >= 0.4'
+            'md2pdf >= 0.4',
       ]
      )

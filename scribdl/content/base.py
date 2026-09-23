@@ -1,13 +1,12 @@
 from bs4 import BeautifulSoup
 import requests
 from abc import ABCMeta, abstractmethod
-import six
 
 from .. import internals
+from .. import exceptions
 
 
-@six.add_metaclass(ABCMeta)
-class ScribdBase:
+class ScribdBase(metaclass=ABCMeta):
     """
     A base class for Scribd books, documents and audiobooks.
 
@@ -17,11 +16,11 @@ class ScribdBase:
         A string containing Scribd URL.
     """
 
-    def __init__(self, url):
+    def __init__(self, url, soup=None):
         self.url = url
         self._title = None
         self._sanitized_title = None
-        self._hidden_soup = None
+        self._hidden_soup = soup
 
     @property
     def title(self):
@@ -29,7 +28,10 @@ class ScribdBase:
         Scrapes the title of the Scribd document.
         """
         if not self._title:
-            title = self._soup.find("h1").get_text()
+            h1 = self._soup.find("h1")
+            if h1 is None:
+                raise exceptions.ScribdFetchError("Could not find the title on page: {}".format(self.url))
+            title = h1.get_text()
             # this unneed prefix may happen on textual books
             unneeded_prefix = "Currently Reading: "
             if title.startswith(unneeded_prefix):
@@ -60,6 +62,7 @@ class ScribdBase:
         Parse HTML.
         """
         if not self._hidden_soup:
-            response = requests.get(self.url)
+            response = requests.get(self.url, timeout=internals.REQUEST_TIMEOUT)
+            internals.check_page_response(response)
             self._hidden_soup = BeautifulSoup(response.text, "html.parser")
         return self._hidden_soup

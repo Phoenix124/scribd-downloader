@@ -7,6 +7,7 @@ from .content.book import ScribdBook
 from .content.audiobook import ScribdAudioBook
 
 from .pdf_converter import ConvertToPDF
+from .internals import REQUEST_TIMEOUT, check_page_response
 
 
 class Downloader:
@@ -21,6 +22,7 @@ class Downloader:
 
     def __init__(self, url):
         self.url = url
+        self._soup = None
         is_audiobook = self.is_audiobook()
         if is_audiobook:
             is_book = False
@@ -56,7 +58,7 @@ class Downloader:
         Downloads books off Scribd.
         Returns an object of `ConvertToPDF` class.
         """
-        book = ScribdBook(self.url)
+        book = ScribdBook(self.url, self._soup)
         md_path = book.download()
         pdf_path = "{}.pdf".format(book.sanitized_title)
         return ConvertToPDF(md_path, pdf_path)
@@ -67,9 +69,9 @@ class Downloader:
         Returns an object of `ConvertToPDF` class.
         """
         if image_document:
-            document = ScribdImageDocument(self.url)
+            document = ScribdImageDocument(self.url, self._soup)
         else:
-            document = ScribdTextualDocument(self.url)
+            document = ScribdTextualDocument(self.url, self._soup)
 
         content_path = document.download()
         pdf_path = "{}.pdf".format(document.sanitized_title)
@@ -92,10 +94,16 @@ class Downloader:
         Checks whether the passed URL points to a Scribd book
         or a Scribd document.
         """
-        response = requests.get(self.url)
-        soup = BeautifulSoup(response.text, "html.parser")
-        content_class = soup.find("body")["class"]
-        matches_with_book = content_class[0] == "autogen_class_views_layouts_book_web"
+        if "/book/" in self.url or "/read/" in self.url:
+            return True
+        if self._soup is None:
+            response = requests.get(self.url, timeout=REQUEST_TIMEOUT)
+            check_page_response(response)
+            # Reused by the content classes to avoid fetching the page twice
+            self._soup = BeautifulSoup(response.text, "html.parser")
+        body = self._soup.find("body")
+        content_class = body.get("class", []) if body else []
+        matches_with_book = bool(content_class) and content_class[0] == "autogen_class_views_layouts_book_web"
         return matches_with_book
 
     def is_audiobook(self):

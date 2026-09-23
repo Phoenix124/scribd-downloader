@@ -221,13 +221,13 @@ class ScribdAudioBook(ScribdBase):
         Scrapes the License-ID for the audiobook. We need to handle retries
         as Scribd can sometimes fail to deliver the License-ID in the HTML.
         """
-        requests.get(self.authenticate_url, cookies=self.cookies)
-        response = requests.get(self.license_url, headers=self.headers)
+        requests.get(self.authenticate_url, cookies=self.cookies, timeout=internals.REQUEST_TIMEOUT)
+        response = requests.get(self.license_url, headers=self.headers, timeout=internals.REQUEST_TIMEOUT)
         response_dict = json.loads(response.text)
         try:
             license_id = response_dict["licenses"][0]["id"]
-        except KeyError:
-            raise exceptions.ScribdFetchError("Unable to fetch the License ID for the audiobook. This attribute"
+        except (KeyError, IndexError):
+            raise exceptions.ScribdFetchError("Unable to fetch the License ID for the audiobook. This attribute "
                                               "is only available when using a premium Scribd account.")
         else:
             return license_id
@@ -239,8 +239,8 @@ class ScribdAudioBook(ScribdBase):
         """
         Scrapes the provided audiobook URL for information scraps.
         """
-        response = requests.get(self.audiobook_url, cookies=self.cookies)
-        # response = requests.get(self.audiobook_url)
+        response = requests.get(self.audiobook_url, cookies=self.cookies, timeout=internals.REQUEST_TIMEOUT)
+        internals.check_page_response(response)
         soup = BeautifulSoup(response.text, "html.parser")
 
         div_tag = soup.find("div", {"data-track_category": "book_preview"})
@@ -261,9 +261,7 @@ class ScribdAudioBook(ScribdBase):
         Scrapes the authentication/listen page of the audiobook
         for information scraps.
         """
-        response = requests.get(self.authenticate_url, cookies=self.cookies)
-        soup = BeautifulSoup(response.text, "html.parser")
-        js_tag = soup.find_all("script", {"type": "text/javascript"})[-2]
+        response = requests.get(self.authenticate_url, cookies=self.cookies, timeout=internals.REQUEST_TIMEOUT)
 
         try:
             start = response.text[response.text.find('{"eor_url":'):]
@@ -273,7 +271,7 @@ class ScribdAudioBook(ScribdBase):
             info_dict = json.loads(info_str)
             info_dict["pingback_url"] = "".join(info_dict["pingback_url"])
         except ValueError:
-            raise exceptions.ScribdFetchError("Unable to fetch information via the authentication page for the"
+            raise exceptions.ScribdFetchError("Unable to fetch information via the authentication page for the "
                                               "audiobook. This is only available when using a premium Scribd account.")
         else:
             return info_dict
@@ -284,8 +282,8 @@ class ScribdAudioBook(ScribdBase):
         is authenticated with a premium Scribd account or not.
         """
         if self.premium_cookies:
-            data = '{"license_id":"' + self.license_id + '"}'
-            response = requests.post(self.playlist_url, headers=self.headers, data=data)
+            data = {"license_id": str(self.license_id)}
+            response = requests.post(self.playlist_url, headers=self.headers, json=data, timeout=internals.REQUEST_TIMEOUT)
             playlist = json.loads(response.text)
         else:
             playlist = {"playlist": [{"url": self.preview_url,
