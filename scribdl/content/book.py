@@ -17,12 +17,14 @@ class ScribdBook(ScribdBase):
         A string containing Scribd book URL.
     """
 
-    def __init__(self, book_url):
-        super().__init__(book_url)
-        self.filename = self.sanitized_title + ".md"
-        self.url = book_url
+    def __init__(self, book_url, soup=None):
+        super().__init__(book_url, soup)
         self._book_id = None
         self._csrf_token = None
+
+    @property
+    def filename(self):
+        return self.sanitized_title + ".md"
 
     @property
     def book_id(self):
@@ -51,7 +53,7 @@ class ScribdBook(ScribdBase):
         """
         if not self._csrf_token:
             csrf_token_url = "https://scribd.com/csrf_token"
-            response = requests.get(csrf_token_url, cookies=const.premium_cookies)
+            response = requests.get(csrf_token_url, cookies=const.premium_cookies, timeout=internals.REQUEST_TIMEOUT)
             json_dict = json.loads(response.text)
             self._csrf_token = {"X-CSRF-Token": json_dict["csrf_token"]}
         return self._csrf_token
@@ -62,6 +64,9 @@ class ScribdBook(ScribdBase):
         """
         if not filename:
             filename = self.filename
+
+        # Start from an empty file so re-runs don't duplicate content
+        open(filename, "w").close()
 
         token = self._get_token()
         chapter = 1
@@ -109,7 +114,7 @@ class ScribdBook(ScribdBase):
 
     def fetch_response(self, chapter, token):
         url = self._format_content_url(chapter, token)
-        response = requests.get(url)
+        response = requests.get(url, timeout=internals.REQUEST_TIMEOUT)
         return response
 
     def _extract_text_blocks(self, response_dict, chapter, token, filename):
@@ -144,10 +149,6 @@ class ScribdBook(ScribdBase):
             pass
         internals.download_stream(url, path)
 
-    def _extract_image_path_from_url(self, url):
-        image_name = url.split("/")[-1].split("?token=")[0]
-        return os.path.join(self.book_id, image_name)
-
     def _format_content_url(self, chapter, token):
         """
         Generates a string which points to a URL containing
@@ -178,7 +179,8 @@ class ScribdBook(ScribdBase):
         token = requests.post(token_url,
                               headers=self.csrf_token_header,
                               cookies=const.premium_cookies,
-                              data=data)
+                              data=data,
+                              timeout=internals.REQUEST_TIMEOUT)
         return json.loads(token.text)["response"]
 
     def save_text(self, string_text, filename):

@@ -19,11 +19,9 @@ class ScribdDocument(ScribdBase):
         A string containing Scribd document URL.
     """
 
-    def __init__(self, document_url):
-        super().__init__(document_url)
-        self.url = document_url
+    def __init__(self, document_url, soup=None):
+        super().__init__(document_url, soup)
         self._jsonp_urls = None
-        self._hidden_soup = None
 
     @property
     def jsonp_urls(self):
@@ -76,9 +74,9 @@ class ScribdTextualDocument(ScribdDocument):
         A string containing Scribd document URL.
     """
 
-    def __init__(self, document_url):
-        super().__init__(document_url)
-        self.filename = self.sanitized_title + ".md"
+    @property
+    def filename(self):
+        return self.sanitized_title + ".md"
 
     def download(self, filename=None):
         """
@@ -89,6 +87,8 @@ class ScribdTextualDocument(ScribdDocument):
             filename = self.filename
 
         print("Extracting text to", self.sanitized_title, "\n")
+        # Start from an empty file so re-runs don't duplicate content
+        open(filename, "w", encoding="utf-8").close()
         self._text_extractor(filename)
         return filename
 
@@ -104,7 +104,7 @@ class ScribdTextualDocument(ScribdDocument):
         Makes a GET request to the '.jsonp' URL and saves
         the text to the passed file.
         """
-        response = requests.get(jsonp).text
+        response = requests.get(jsonp, timeout=internals.REQUEST_TIMEOUT).text
         page_no = response[11:12]
 
         response_head = (
@@ -117,11 +117,11 @@ class ScribdTextualDocument(ScribdDocument):
         soup_content = BeautifulSoup(response_head, "html.parser")
 
         for x in soup_content.find_all("span", {"class": "a"}):
-            xtext = internals.fix_encoding(x.get_text())
+            xtext = x.get_text()
             print(xtext)
 
             extraction = xtext + "\n\n"
-            with open(filename, "a") as feed:
+            with open(filename, "a", encoding="utf-8") as feed:
                 feed.write(extraction)
 
 
@@ -135,8 +135,8 @@ class ScribdImageDocument(ScribdDocument):
         A string containing Scribd document URL.
     """
 
-    def __init__(self, document_url):
-        super().__init__(document_url)
+    def __init__(self, document_url, soup=None):
+        super().__init__(document_url, soup)
         self._image_download_counter = 1
 
     def download(self, initial_filename=None):

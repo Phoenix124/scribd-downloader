@@ -3,6 +3,7 @@ import json
 from bs4 import BeautifulSoup
 from . import const
 from . import exceptions
+from .internals import REQUEST_TIMEOUT
 
 SCRIBD_LOGIN_URL = "https://www.scribd.com/login"
 
@@ -21,7 +22,7 @@ def set_credentials(filepath):
     from the file passed and overrides the default values
     for headers and cookies.
     """
-    login_page = requests.get(SCRIBD_LOGIN_URL)
+    login_page = requests.get(SCRIBD_LOGIN_URL, timeout=REQUEST_TIMEOUT)
     login_cookies = login_page.cookies
 
     with open(filepath, "r") as in_file:
@@ -32,7 +33,7 @@ def set_credentials(filepath):
     SCRIBD_LOGIN_DATA["login_password"] = password
 
     # <meta name="csrf-token" content="1k3cOzA9ci6dicSRZce5LjyiH6ird+K/hZ/H7ynnSXiuG/8W1XdozUVSAhUBAIWpIeAlDoTmObzijWW/wDGXUA==" />
-    soup = BeautifulSoup(login_page.text, features="html5lib")
+    soup = BeautifulSoup(login_page.text, "html.parser")
     csrf = soup.find("meta", dict(name="csrf-token"))
     if csrf:
         SCRIBD_LOGIN_HEADERS["X-CSRF-Token"] = csrf.attrs['content']
@@ -40,7 +41,8 @@ def set_credentials(filepath):
     response = requests.post(SCRIBD_LOGIN_URL,
                              headers=SCRIBD_LOGIN_HEADERS,
                              cookies=login_cookies,
-                             json=SCRIBD_LOGIN_DATA)
+                             json=SCRIBD_LOGIN_DATA,
+                             timeout=REQUEST_TIMEOUT)
 
     if response.status_code != 200:
         raise exceptions.ScribdFetchError("Login failed with status " + str(response.status_code))
@@ -48,13 +50,16 @@ def set_credentials(filepath):
     #print(response.text)
     result = json.loads(response.text)
     # {"login":true,"success":true,"user":{"id":514698173}}
-    if not "login" in result or not result["login"]:
+    if not result.get("login"):
         # {"form_name":null,"errors":[{"input_name":"login_or_email","msg":"No account found with that email or username. Please try again or sign up."}]}
-        errors = result["errors"]
+        errors = result.get("errors")
         if errors:
             raise exceptions.ScribdFetchError("Login error: " + errors[0]["msg"])
+        raise exceptions.ScribdFetchError("Login failed: unexpected response from Scribd")
 
-    const.premium_cookies["_scribd_session"] = response.cookies["_scribd_session"]
-    const.premium_cookies["_scribd_expire"] = response.cookies["_scribd_expire"]
+    for cookie in ("_scribd_session", "_scribd_expire"):
+        if cookie not in response.cookies:
+            raise exceptions.ScribdFetchError("Login failed: missing cookie " + cookie)
+        const.premium_cookies[cookie] = response.cookies[cookie]
 
     return response

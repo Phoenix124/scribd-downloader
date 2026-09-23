@@ -3,3 +3,8 @@ build/
 dist/
 scribd+cred.txt
 *.iml
+__pycache__/
+*.pyc
+venv/
+*.egg-info/
+/PKG-INFO
